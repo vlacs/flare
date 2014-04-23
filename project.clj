@@ -10,5 +10,5 @@
   :profiles {:dev {:plugins [[lein-voom "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure]]]
                    :dependencies [[org.clojure/tools.namespace "0.2.4"]
                                   ^{:voom {:repo "https://github.com/vlacs/helmsman"}}
-                                  [org.vlacs/helmsman "0.2.4-20140422_064524-gd8f59fb"]]
+                                  [org.vlacs/helmsman "0.2.4"]]
                    :source-paths ["dev"]}})
