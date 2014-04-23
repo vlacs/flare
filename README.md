@@ -11,7 +11,7 @@ To reproduce our voom issue:
 
 In order to make it work, it appears that I need to:
 
-1. Move ```:plugins [[lein-voom "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure]]]``` from ```project.clj``` to ```~/.lein/profiles.clj```
+1. Move ```:plugins [[lein-voom "0.1.0-SNAPSHOT"]]``` from ```project.clj``` to ```~/.lein/profiles.clj```
  1. How can this work on a CI server that doesn't have my ```~/.lein/profiles.clj```? 
 2. Move the helmsman dep from ```{:profiles {:dev {:dependencies ...}}}``` to the
    top-level project map.
