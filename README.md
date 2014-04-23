@@ -10,8 +10,9 @@ To reproduce our voom issue:
  1. Does not work. Sad. :(
 
 In order to make it work, it appears that I need to:
-1. Move :plugins [[lein-voom "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure]]] from project.clj to ~/.lein/profiles.clj
-2. Move the helmsman dep from {:profiles {:dev {:dependencies ...}}} to the
+
+1. Move ```:plugins [[lein-voom "0.1.0-SNAPSHOT" :exclusions [org.clojure/clojure]]]``` from ```project.clj``` to ```~/.lein/profiles.clj```
+2. Move the helmsman dep from ```{:profiles {:dev {:dependencies ...}}}``` to the
    top-level project map.
 
 ## Releases and Dependency Information
