@@ -3,9 +3,10 @@
 To reproduce our voom issue:
 
 1. clone this repo
-2. lein voom freshen
+2. git checkout voom-boom
+3. lein voom freshen
  1. Works. Yay!
-3. lein voom build-deps
+4. lein voom build-deps
  1. Does not work. Sad. :(
 
 In order to make it work, it appears that I need to:
