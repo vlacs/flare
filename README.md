@@ -1,6 +1,7 @@
 # flare
 
 To reproduce our voom issue:
+
 1. clone this repo
 2. lein voom freshen
  1. Works. Yay!
