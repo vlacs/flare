@@ -21,11 +21,19 @@
    #_[helmsman]))
 
 (defn go []
-  (ft-config/start!))
+  ;;; Start our testing enviornment.
+  (ft-config/start!)
+  ;;; Initialize flare.
+  (flare/init! ft-config/system)
+  ;;; Tie our env. to our application.
+  (flare/start! ft-config/system))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
   []
+  ;;; Wrap up what we're doing.
+  (flare/stop! ft-config/system)
+  ;;; Close down our env.
   (ft-config/stop!)
   (refresh :after 'user/go))
 
