@@ -24,4 +24,13 @@
 (def partitions (hatch/schematode->partitions schema/schema))
 (def valid-attrs (hatch/schematode->attrs schema/schema))
 (def tx-entity! (partial hatch/tx-clean-entity! partitions valid-attrs))
- 
+
+;;; TODO: Move this to hatch?
+(defn strip-nils
+  "Datomic doesn't allow attributes to be nil, so there are instance where we
+  want to strip them out before datomic gets a hold of it."
+  [entity-map]
+  (apply
+    dissoc
+    entity-map
+    (for [[k v] entity-map :when (nil? v)] k))) 

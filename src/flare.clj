@@ -3,11 +3,18 @@
             [flare.state :as state]
             [hatch]))
 
+(def schema flare.schema/schema)
+
 (defn init!
-  "Starts up flare for the first time."
-  [system]
-  (flare.state/init-database! (:db-conn system))
-  :initialized)
+  "Starts up flare for the first time. By default, we don't load up the schema.
+  this is because Galleon will do it for us, but in development we will manually
+  specify that we want to load it at this point."
+  ([system]
+   (init! false system))
+  ([init-database? system]
+   (when init-database?
+     (flare.state/init-database! (:db-conn system)))
+   :initialized))
 
 (defn start!
   "Brings flare up so we'll be ready for business."

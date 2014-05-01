@@ -3,7 +3,7 @@
 
 (def schema
   [;;; A description of something that changes.
-   [:event {:attrs [[:type :keyword :indexed]
+   [:event {:attrs [[:type :keyword :indexed :db.unique/identity]
                     [:version :keyword :indexed]]}]
 
    ;;; A particular "fact" that's asserted and identified as a particular event.
@@ -15,7 +15,8 @@
                         [:payload :string]]}]
 
    ;;; Describes clients that can subscribe and their credentials.
-   [:client {:attrs [[:name :string]
+   ;;; These should be manually entered.
+   [:client {:attrs [[:name :string :db.unique/identity]
                      [:auth-token :string]]}]
 
    ;;; A client who wants to know about something that happens (an event) and

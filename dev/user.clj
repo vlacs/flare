@@ -23,8 +23,8 @@
 (defn go []
   ;;; Start our testing enviornment.
   (ft-config/start!)
-  ;;; Initialize flare.
-  (flare/init! ft-config/system)
+  ;;; Initialize flare including loading the schema.
+  (flare/init! true ft-config/system)
   ;;; Tie our env. to our application.
   (flare/start! ft-config/system))
 
