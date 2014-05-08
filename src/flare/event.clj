@@ -1,58 +1,43 @@
 (ns flare.event
   (:require [datomic.api :as d]
-            [flare.state :as state]))
+            [flare.db]))
 
-(defn event-entity-id
+(defn event-type-entity-id
   "Returns an entity id for a currently registered event."
-  [event-type]
+  [db-conn event-type]
   (first
     (first
       (d/q '[:find ?e
              :in $ ?type
-             :where [?e :event/type ?type]]
-           (d/db flare.state/db)
-           event-type))))
-
-(defn event-version
-  "Returns the version of the passed in event keyword or nil if it doesn't
-  exist in the database."
-  [event-type]
-  (first
-    (first
-      (d/q '[:find ?version
-             :in $ ?type
-             :where
-             [?e :event/type ?type]
-             [?e :event/version ?version]]
-           (d/db flare.state/db)
+             :where [?e :db/ident ?type]]
+           (d/db db-conn)
            event-type))))
 
 (defn registered?
   "Checks to see if a particular event is registered with flare."
-  [event-type]
-  (not (nil? (event-entity-id event-type))))
+  [db-conn event-type]
+  (not (nil? (event-type-entity-id db-conn event-type))))
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
-  [event-type version]
-  (if-let [tx-result @(state/tx-entity!
-                        flare.state/db
+  [db-conn event-type]
+  (if-let [tx-result @(flare.db/tx-entity!
+                        db-conn
                         :event
-                        {:event/type event-type
-                         :event/version version})]
-    (event-entity-id event-type)
+                        {:event/type event-type})]
+    (event-type-entity-id db-conn event-type)
     nil))
 
-(defn assert!
+(defn event!
   "Asserts a fact about a particular event."
-  [event-type user-responsible users-affected message payload]
-  (if-let [eeid (event-entity-id event-type)]
-    (state/tx-entity!
-      flare.state/db
-      :assertion
-      (flare.state/strip-nils
-        {:assertion/event eeid
-         :assertion/event-version (event-version event-type)
+  [db-conn event-type event-version user-responsible users-affected message payload]
+  (if-let [eteid (event-type-entity-id event-type)]
+    (flare.db/tx-entity!
+      db-conn
+      :event
+      (flare.db/strip-nils
+        {:assertion/type eteid
+         :assertion/event-version event-version
          :assertion/users-affected users-affected
          :assertion/user-responsible user-responsible
          :assertion/message message

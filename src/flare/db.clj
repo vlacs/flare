@@ -1,4 +1,4 @@
-(ns flare.state
+(ns flare.db
   (:require [flare.schema :as schema]
             [datomic-schematode.core :as schematode]
             [hatch]))
@@ -9,17 +9,6 @@
   [new-database]
   [(schematode/init-schematode-constraints! new-database)
    (schematode/load-schema! new-database schema/schema)])
- 
-;;; We want a local reference to the database. This will get set by either the
-;;; dev/user.clj file or by Galleon's start-fn!.
-(def db nil)
-
-(defn set-db-var!
-  "Set the database that we're using for flare."
-  [database]
-  (alter-var-root #'db (constantly database)))
-
-(defn detach-db-var! [] (alter-var-root #'db (constantly nil)))
 
 (def partitions (hatch/schematode->partitions schema/schema))
 (def valid-attrs (hatch/schematode->attrs schema/schema))

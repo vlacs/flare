@@ -1,6 +1,6 @@
 (ns flare
   (:require [flare.schema :as schema]
-            [flare.state :as state]
+            [flare.db]
             [hatch]))
 
 (def schema flare.schema/schema)
@@ -13,19 +13,17 @@
    (init! false system))
   ([init-database? system]
    (when init-database?
-     (flare.state/init-database! (:db-conn system)))
+     (flare.db/init-database! (:db-conn system)))
    :initialized))
 
 (defn start!
   "Brings flare up so we'll be ready for business."
   [system]
-  (state/set-db-var! (:db-conn system))
   :started)
 
 (defn stop!
   "Wraps up everything flare is working on so we can cleanly shutdown."
   [system]
-  (state/detach-db-var!)
   :stopped)
 
 ;;; This is old, we're going to update this soon. :)

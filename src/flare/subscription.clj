@@ -1,29 +1,29 @@
 (ns flare.subscription
   (:require [datomic.api :as d]
-            [flare.state :as state]
+            [flare.db]
             [flare.event :as event]))
 
 (defn client-entity-id
-  [client-name]
+  [db-conn client-name]
   (first
     (first
       (d/q '[:find ?e
              :in $ ?name
              :where [?e :client/name ?name]]
-           (d/db flare.state/db)
+           (d/db db-conn)
            client-name))))
 
 (defn client-registered?
-  [client-name]
-  (not (nil? (client-entity-id client-name))))
+  [db-conn client-name]
+  (not (nil? (client-entity-id db-conn client-name))))
 
 (defn add-client!
-  [client-name auth-token]
+  [db-conn client-name auth-token]
   (if
     (not
       (nil?
-        @(state/tx-entity!
-           flare.state/db
+        @(flare.db/tx-entity!
+           db-conn
            :client
            {:client/name client-name
             :client/auth-token auth-token})))
@@ -38,7 +38,7 @@
   )
 
 (defn subscription-entity-id
-  [client-name event-type]
+  [db-conn client-name event-type]
   (first
     (first
       (d/q '[:find ?subscription
@@ -48,20 +48,21 @@
              [?event :event/type ?event-type]
              [?subscription :subscription/event ?event]
              [?subscription :subscription/client ?client]]
-           (d/db flare.state/db)
+           (d/db db-conn)
            client-name
            event-type)))
   )
 
 (defn subscribe!
-  [client-name
+  [db-conn
+   client-name
    event-type
    url-string
    http-method-keyword
    format-keyword]
   ;;; We can only subscribe to events and clients that are already registered.
-  (let [client-eid (client-entity-id client-name)
-        event-eid (event/event-entity-id event-type)]
+  (let [client-eid (client-entity-id db-conn client-name)
+        event-eid (event/event-entity-id db-conn event-type)]
     (when (nil? client-eid)
       (throw
         (.Exception 
@@ -73,15 +74,14 @@
     (if
       (not
         (nil?
-          @(state/tx-entity!
-             flare.state/db
+          @(flare.db/tx-entity!
+             db-conn
              :subscription
              {:subscription/client client-eid
               :subscription/event event-eid
               :subscription/url url-string
               :subscription/http-method http-method-keyword
               :subscription/format format-keyword})))
-      ()
       )
     )
   
