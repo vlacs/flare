@@ -1,49 +1,75 @@
 (ns flare.event
   (:require [datomic.api :as d]
-            [flare.db]))
+            [flare.db]
+            [hatch]))
 
-(defn event-type-entity-id
-  "Returns an entity id for a currently registered event."
-  [db-conn event-type]
-  (first
-    (first
-      (d/q '[:find ?e
-             :in $ ?type
-             :where [?e :db/ident ?type]]
-           (d/db db-conn)
-           event-type))))
+(defn app-event-keyword
+  [app event]
+  (keyword (str (name app) "." (name event))))
+
+(defn slam-event-type
+  "Puts an event type into our special event-type namespace with application
+  segregation so different applications can have event-types with the same
+  names. Every event is application namespaced."
+  [application event-type]
+  (flare.db/enum-keyword :event :type (app-event-keyword application event-type)))
 
 (defn registered?
   "Checks to see if a particular event is registered with flare."
-  [db-conn event-type]
-  (not (nil? (event-type-entity-id db-conn event-type))))
+  [db-conn application event-type]
+  (not (nil? (d/entity (d/db db-conn) event-type))))
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
-  [db-conn event-type]
-  (if-let [tx-result @(flare.db/tx-entity!
-                        db-conn
-                        :event
-                        {:event/type event-type})]
-    (event-type-entity-id db-conn event-type)
-    nil))
+  [db-conn application event-type]
+  (when @(flare.db/tx-entity!
+           db-conn
+           :event.type
+           {:db/ident (slam-event-type
+                        application
+                        event-type)})
+    (slam-event-type application event-type)))
+
+(def query-subscriptions
+  '[:find ?e ?sub-inactive ?client-inactive
+    :in $ ?event-type
+    :where 
+    [?e :subscription/event.type ?event-type]
+    [?e :subscription/client ?client]
+    [(get-else $ ?e :subscription/inactive false) ?sub-inactive]
+    [(get-else $ ?client :client/inactive? false) ?client-inactive]])
+
+(defn make-subscription-notifications
+  [event-type event-tempid]
+  [:foo]
+  )
+
+(defn make-user-notifications
+  [event-type event-tempid]
+  [:bar]
+  )
+
+(defn make-notifications
+  [event-type event-tempid]
+  (vec
+    (concat
+      (make-subscription-notifications event-type event-tempid)
+      (make-user-notifications event-type event-tempid))))
 
 (defn event!
-  "Asserts a fact about a particular event."
+  "Prepares datoms describing the event to be transacted in with all of the
+  notifications associated with it as of the time event! was called."
   [db-conn event-type event-version user-responsible users-affected message payload]
-  (if-let [eteid (event-type-entity-id event-type)]
-    (flare.db/tx-entity!
-      db-conn
-      :event
-      (flare.db/strip-nils
-        {:assertion/type eteid
-         :assertion/event-version event-version
-         :assertion/users-affected users-affected
-         :assertion/user-responsible user-responsible
-         :assertion/message message
-         :assertion/payload payload}))
-    (throw
-      (Exception.
-        (str "Unable to assert a fact about an event that's not registered."
-             "\nEvent: (" event-type ")")))))
+  (let [event-tempid (flare.db/new-tempid :event)
+        clean-event (->> {:event/type event-type
+                          :event/version event-version
+                          :event/users-affected users-affected
+                          :event/user-responsible user-responsible
+                          :event/message message
+                          :event/payload payload}
+                         (flare.db/clean-entity :event)
+                         flare.db/strip-nils)]
+    (concat
+      [clean-event]
+      (make-notifications event-type event-tempid))))
 

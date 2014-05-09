@@ -5,7 +5,7 @@
             :url "http://choosealicense.com/"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [com.datomic/datomic-free "0.9.4707"]
-                 [org.vlacs/hatch "0.1.1"]
+                 [org.vlacs/hatch "0.1.2"]
                  [datomic-schematode "0.1.0-RC1"]
                  ^{:voom {:repo "https://github.com/vlacs/helmsman"}}
                  [org.vlacs/helmsman "0.2.4"]]
