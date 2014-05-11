@@ -20,13 +20,18 @@
    [hatch]
    #_[helmsman]))
 
+;;; Local database connection to use in the REPL during development.
+(def db nil)
+
 (defn go []
   ;;; Start our testing enviornment.
   (ft-config/start!)
   ;;; Initialize flare including loading the schema.
   (flare/init! true ft-config/system)
   ;;; Tie our env. to our application.
-  (flare/start! ft-config/system))
+  (flare/start! ft-config/system)
+  ;;; Bind the database connection so devs can use it.
+  (alter-var-root #'user/db (constantly (:db-conn ft-config/system))))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."

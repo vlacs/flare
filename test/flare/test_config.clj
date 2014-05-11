@@ -1,7 +1,10 @@
 (ns flare.test-config
   (:require [datomic.api :as d]
             [datomic-schematode.core :as schematode]
-            [flare.schema :as schema]))
+            [flare.schema :as schema]
+            [flare.client]
+            [flare.event]
+            [flare.subscription]))
 
 (def system {:datomic-uri "datomic:mem://flare-test"})
 (def datomic-uri (:datomic-uri system))
@@ -9,6 +12,17 @@
 (defn init! [system]
   [(schematode/init-schematode-constraints! (:db-conn system))
    (schematode/load-schema! (:db-conn system) schema/schema)])
+
+(defn tx-testing-data!
+  [db-conn]
+  (flare.client/add! db-conn "ShowEvidence" "abc123")
+  (flare.client/add! db-conn "VLACS" "123abc")
+  (flare.event/register! db-conn :flare :some-event)
+  (flare.subscription/subscribe!
+    db-conn "VLACS" :event.type/flare.some-event
+    "http://foo.bar/api"
+    flare.subscription/http-method-post
+    flare.subscription/format-edn))
 
 (defn start-datomic! [system]
   (d/create-database datomic-uri)

@@ -31,13 +31,15 @@
     (slam-event-type application event-type)))
 
 (def query-subscriptions
-  '[:find ?e ?sub-inactive ?client-inactive
+  '[:find ?e ?sub-inactive ?client-inactive ?sub-paused ?client-paused
     :in $ ?event-type
     :where 
     [?e :subscription/event.type ?event-type]
     [?e :subscription/client ?client]
-    [(get-else $ ?e :subscription/inactive false) ?sub-inactive]
-    [(get-else $ ?client :client/inactive? false) ?client-inactive]])
+    [(get-else $ ?e :subscription/inactive? false) ?sub-inactive]
+    [(get-else $ ?client :client/inactive? false) ?client-inactive]
+    [(get-else $ ?e :subscription/paused? false) ?sub-paused]
+    [(get-else $ ?client :client/paused? false) ?client-paused]])
 
 (defn make-subscription-notifications
   [event-type event-tempid]

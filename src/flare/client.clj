@@ -14,13 +14,38 @@
            (d/db db-conn)
            client-name))))
 
+(defn prep-new
+  ([client-name auth-token]
+   (prep-new client-name auth-token nil nil))
+  ([client-name auth-token paused? inactive?]
+   (hatch/slam-all
+     {:name client-name
+      :auth-token auth-token
+      :paused? paused?
+      :inactive? inactive?}
+     :client)))
+
+(defn prep-update
+  [db-conn client-name attributes]
+  (merge
+    {:db/id (entity-id db-conn client-name)}
+    (hatch/slam-all
+      attributes
+      :client)))
+
 (defn upsert!
   [db-conn attributes]
   (flare.db/tx-entity!
     db-conn
     :client
-    (hatch/slam)
-    attributes))
+    (flare.db/strip-nils attributes)))
+
+(defn upserted?
+  "Checks to see if an upsert! succeeded."
+  [db-promise]
+  (not
+    (nil?
+      @db-promise)))
 
 (defn registered?
   "Is a client with a particular name registered?"
@@ -29,37 +54,50 @@
 
 (defn add!
   [db-conn client-name auth-token]
-  (if
-    (not
-      (nil?
-        @(upsert!
-           {:client/name client-name
-            :client/auth-token auth-token})))
-    :client-added
-    (throw
-      (.Exception
-        (str "Adding flare client to the database failed.")))))
+  (when
+    (upserted?
+      (upsert!
+        db-conn
+        (prep-new client-name auth-token)))
+    :added))
 
 (defn deactivate!
   "Stops flare from making notifications for a particular client."
   [db-conn client-name]
-  :deactivated
-  )
+  (when
+    (upserted?
+      (upsert!
+        db-conn
+        (prep-update db-conn client-name {:inactive? true}))))
+  :deactivated)
 
 (defn activate!
   "Allows flare to start making notifications for a particular client."
   [db-conn client-name]
-  :activated
-  )
+  (when
+    (upserted?
+      (upsert!
+        db-conn
+        (prep-update db-conn client-name {:inactive? false})))
+    :activated))
 
 (defn pause!
   "Stops processing notifications for a particular client."
   [db-conn client-name]
-  :paused
-  )
- 
+  (when
+    (upserted?
+      (upsert!
+        db-conn
+        (prep-update db-conn client-name {:paused? true})))
+    :paused))
+
 (defn resume!
   "Allows processing of this client's notifications."
   [db-conn client-name]
-  :resumed
-  )
+  (when
+    (upserted?
+      (upsert!
+        db-conn
+        (prep-update db-conn client-name {:paused? false})))
+    :resumed))
+
