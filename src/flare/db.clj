@@ -12,10 +12,15 @@
   [(schematode/init-schematode-constraints! new-database)
    (schematode/load-schema! new-database schema/schema)])
 
+#_
 (def partitions (merge {:event.type :db.part/user}
                        (hatch/schematode->partitions schema/schema)))
-(def valid-attrs (merge {:event.type [:db/ident]}
-                        (hatch/schematode->attrs schema/schema)))
+
+(def partitions (hatch/schematode->partitions schema/schema))
+(def valid-attrs (merge-with
+                  (fn [x y] (vec (concat x y)))
+                   {:event.type [:db/ident]}
+                   (hatch/schematode->attrs schema/schema)))
 (def clean-entity (partial hatch/clean-entity partitions valid-attrs))
 (def tx-entity! (partial hatch/tx-clean-entity! partitions valid-attrs))
 (defn new-tempid

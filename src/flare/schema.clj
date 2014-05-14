@@ -4,6 +4,15 @@
 (def schema
   [;;; A description of something that changes.
    ;; the calling aplication hands this structure to flare:
+
+   ;;; We need a list of all the types we have.
+   ;;; This has a fully qualified keyword :db/ident value that is associated
+   ;;; with it but isn't shown here.
+   ;;; TODO: Ask Matt if we can put [:db/ident :keyword] before :application.
+   [:event.type {:attrs [[:application :keyword]
+                         [:name :keyword]
+                         [:description :string]]}]
+
    [:event {:attrs [[:type :enum [:flare.ping] :indexed]
                     [:version :keyword]
                     [:users-affected :ref :many]

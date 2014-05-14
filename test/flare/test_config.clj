@@ -22,7 +22,13 @@
     db-conn "VLACS" :event.type/flare.some-event
     "http://foo.bar/api"
     flare.subscription/http-method-post
-    flare.subscription/format-edn))
+    flare.subscription/format-json)
+  (flare.subscription/subscribe!
+    db-conn "ShowEvidence" :event.type/flare.some-event
+    "http://showevience.bar/api-v1/resty"
+    flare.subscription/http-method-put
+    flare.subscription/format-edn)
+  :done)
 
 (defn start-datomic! [system]
   (d/create-database datomic-uri)

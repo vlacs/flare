@@ -21,33 +21,26 @@
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
-  [db-conn application event-type]
+  [db-conn application event-type & description]
   (when @(flare.db/tx-entity!
            db-conn
            :event.type
            {:db/ident (slam-event-type
                         application
-                        event-type)})
+                        event-type)
+            :event.type/application application
+            :event.type/name event-type})
     (slam-event-type application event-type)))
 
-(def query-subscriptions
-  '[:find ?e ?sub-inactive ?client-inactive ?sub-paused ?client-paused
-    :in $ ?event-type
-    :where 
-    [?e :subscription/event.type ?event-type]
-    [?e :subscription/client ?client]
-    [(get-else $ ?e :subscription/inactive? false) ?sub-inactive]
-    [(get-else $ ?client :client/inactive? false) ?client-inactive]
-    [(get-else $ ?e :subscription/paused? false) ?sub-paused]
-    [(get-else $ ?client :client/paused? false) ?client-paused]])
 
 (defn make-subscription-notifications
   [event-type event-tempid]
-  [:foo]
+
   )
 
 (defn make-user-notifications
   [event-type event-tempid]
+  ;;; TODO: Figure out exactly how this will work.
   [:bar]
   )
 
@@ -71,7 +64,8 @@
                           :event/payload payload}
                          (flare.db/clean-entity :event)
                          flare.db/strip-nils)]
-    (concat
-      [clean-event]
-      (make-notifications event-type event-tempid))))
+    (vec
+      (concat
+        [clean-event]
+        (make-notifications event-type event-tempid)))))
 

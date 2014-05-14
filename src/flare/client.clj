@@ -1,18 +1,17 @@
 (ns flare.client
   (:require [datomic.api :as d]
             [flare.db]
+            [flare.db.queries :as queries]
+            [flare.db.rules :as rules]
             [hatch]))
 
 (defn entity-id
   "Get the entity id of a client."
   [db-conn client-name]
-  (first
-    (first
-      (d/q '[:find ?e
-             :in $ ?name
-             :where [?e :client/name ?name]]
-           (d/db db-conn)
-           client-name))))
+  (ffirst
+    (d/q queries/client-entity-id
+         (d/db db-conn)
+         client-name)))
 
 (defn prep-new
   ([client-name auth-token]
@@ -43,9 +42,7 @@
 (defn upserted?
   "Checks to see if an upsert! succeeded."
   [db-promise]
-  (not
-    (nil?
-      @db-promise)))
+  (not (nil? @db-promise)))
 
 (defn registered?
   "Is a client with a particular name registered?"

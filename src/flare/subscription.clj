@@ -1,6 +1,9 @@
 (ns flare.subscription
   (:require [datomic.api :as d]
+            [flare.util]
             [flare.db]
+            [flare.db.rules :as rules]
+            [flare.db.queries :as queries]
             [flare.client :as client]
             [flare.event :as event]))
 
@@ -10,20 +13,20 @@
 (def format-json :subscription.format/json)
 
 
+(defn subscriptions-by-event
+  [db-conn event-type]
+  (d/q queries/subscription-by-event
+       (d/db db-conn)
+       rules/defaults
+       event-type))
+
 (defn subscription-entity-id
   [db-conn client-name event-type]
-  (first
-    (first
-      (d/q '[:find ?subscription
-             :in $ ?client-name ?event-type
-             :where
-             [?client :client/name ?name]
-             [?event :event/type ?event-type]
-             [?subscription :subscription/event ?event]
-             [?subscription :subscription/client ?client]]
-           (d/db db-conn)
-           client-name
-           event-type))))
+  (ffirst
+    (d/q queries/subscription-entity-id
+         (d/db db-conn)
+         client-name
+         event-type)))
 
 (defn subscribe!
   [db-conn
@@ -53,12 +56,28 @@
       nil)))
 
 (defn deactivate!
-  "Deactivates a subscription so notifications aren't generates for it."
+  "Deactivates a subscription so notifications aren't generated for it."
   [client-name event-type]
   :deactivated 
   )
 
 (defn pause!
-  [client-name event-type]
-  :paused
-  )
+  ([db-conn entity-id]
+   (flare.db/tx-entity!
+     :subscription
+     {:db/id entity-id
+      :subscription/paused? true}))
+  ([db-conn client-name event-type]
+   (pause! db-conn
+           (flare.util/required
+             (partial
+               pause!
+               db-conn
+               (subscription-entity-id
+                 db-conn
+                 client-name
+                 event-type))
+             "Subscription specified does not exist."
+             {:client-name client-name
+              :event-type event-type}))))
+
