@@ -18,6 +18,8 @@
   (flare.client/add! db-conn "ShowEvidence" "abc123")
   (flare.client/add! db-conn "VLACS" "123abc")
   (flare.event/register! db-conn :flare :some-event)
+  (flare.event/register! db-conn :flare :ping)
+  (flare.event/register! db-conn :flare :an-update)
   (flare.subscription/subscribe!
     db-conn "VLACS" :event.type/flare.some-event
     "http://foo.bar/api"

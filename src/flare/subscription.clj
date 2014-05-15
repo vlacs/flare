@@ -12,14 +12,6 @@
 (def format-edn :subscription.format/edn)
 (def format-json :subscription.format/json)
 
-
-(defn subscriptions-by-event
-  [db-conn event-type]
-  (d/q queries/subscription-by-event
-       (d/db db-conn)
-       rules/defaults
-       event-type))
-
 (defn subscription-entity-id
   [db-conn client-name event-type]
   (ffirst

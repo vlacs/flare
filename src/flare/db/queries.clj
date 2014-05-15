@@ -1,7 +1,7 @@
 (ns flare.db.queries)
 
-(def subscription-by-event
-  '{:find [?subscription ?client ?inactive ?paused]
+(def subscriptions-by-event
+  '{:find [?subscription ?inactive ?paused]
     :in [$ % ?event-type]
     :where [[?subscription :subscription/event.type ?event-type]
             [?subscription :subscription/client ?client]
@@ -9,6 +9,26 @@
             (client-defaults ?client ?client-inactive ?client-paused)
             [(or ?sub-inactive ?client-inactive) ?inactive]
             [(or ?sub-paused ?client-paused) ?paused]]})
+
+(def processable-subscriptions-by-event
+  '{:find [?subscription]
+    :in [$ % ?event-type]
+    :where [[?subscription :subscription/event.type ?event-type]
+            [?subscription :subscription/client ?client]
+            (subscription-defaults ?subscription ?sub-inactive ?sub-paused)
+            (client-defaults ?client ?client-inactive ?client-paused)
+            [(or ?sub-paused ?client-paused) ?paused]  
+            [(= ?paused false)]]})
+
+(def active-subscriptions-by-event
+  '{:find [?subscription]
+    :in [$ % ?event-type]
+    :where [[?subscription :subscription/event.type ?event-type]
+            [?subscription :subscription/client ?client]
+            (subscription-defaults ?subscription ?sub-inactive ?sub-paused)
+            (client-defaults ?client ?client-inactive ?client-paused)
+            [(or ?sub-inactive ?client-inactive) ?inactive]  
+            [(= ?inactive false)]]})
  
 (def subscription-entity-id
   '{:find [?subscription]
