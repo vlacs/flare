@@ -7,5 +7,9 @@
 
     [(client-defaults ?client ?client-inactive ?client-paused)
      [(get-else $ ?client :client/inactive? false) ?client-inactive]
-     [(get-else $ ?client :client/paused? false) ?client-paused]]])
+     [(get-else $ ?client :client/paused? false) ?client-paused]]
+    
+    [(subscriber-notification-defaults ?sn ?done)
+     [(get-else $ ?sn :subscriber-notification/done? false) ?done]]])
+
 

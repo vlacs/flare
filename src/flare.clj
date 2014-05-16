@@ -14,17 +14,19 @@
   ([init-database? system]
    (when init-database?
      (flare.db/init-database! (:db-conn system)))
-   :initialized))
+   system))
 
 (defn start!
   "Brings flare up so we'll be ready for business."
   [system]
-  :started)
+  ;;; Start up notification processing.
+  system)
 
 (defn stop!
   "Wraps up everything flare is working on so we can cleanly shutdown."
   [system]
-  :stopped)
+  ;;; Shutdown notification processing
+  system)
 
 ;;; This is old, we're going to update this soon. :)
 (comment

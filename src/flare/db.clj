@@ -38,3 +38,27 @@
     dissoc
     entity-map
     (for [[k v] entity-map :when (nil? v)] k))) 
+
+(defn map-result-keys
+  "Uses a query map to determine the keys for values in the result set for
+  the given query. It assumes that find only has ?variables as we chop off
+  the first char of every symbol after we turn it into a string."
+  [query-map results]
+  (set
+    (map
+      (partial
+        zipmap 
+        (map
+          (fn transient-result-key-mapper [i]
+            (keyword (apply str (rest (str i)))))
+          (:find query-map)))
+      results)))
+
+(defn qmap
+  "This is a wrapper for datomic.api/q by using the datalog names in a query
+  MAP to return a set of hash maps that's compatible with clojure.set."
+  [query & args]
+  (map-result-keys
+    query
+    (apply (partial d/q query) args)))
+

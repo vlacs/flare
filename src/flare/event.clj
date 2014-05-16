@@ -19,22 +19,24 @@
 (defn registered?
   "Checks to see if a particular event is registered with flare."
   [db-conn application event-type]
-  (not (nil? (d/entity (d/db db-conn) event-type))))
+  (not (nil? (d/entity (d/db db-conn) (slam-event-type application event-type)))))
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
   [db-conn application event-type & description]
-  (when @(flare.db/tx-entity!
-           db-conn
-           :event.type
-           {:db/ident (slam-event-type
-                        application
-                        event-type)
-            :event.type/application application
-            :event.type/name event-type})
-    (slam-event-type application event-type)))
+  (let [slammed-event (slam-event-type application event-type)]
+    (when @(flare.db/tx-entity!
+             db-conn
+             :event.type
+             {:db/ident slammed-event
+              :event.type/application application
+              :event.type/name event-type})
+      slammed-event)))
 
 (defn new-subscription-notification-instance
+  "Creates a notification instance based on a to-be-transacted event by the
+  tempid that was generated for it. Notifications should only be made against
+  an event that hasn't been transacted yet, hence the tempid."
   [event-tempid subscription-eid]
   (hatch/clean-entity
     flare.db/partitions
@@ -46,6 +48,9 @@
       :subscriber-notification)))
 
 (defn make-subscription-notifications
+  "Creates subscription-notification entities for subscriptions on a particular
+  event type. Notifications are only made at the time the event is being made,
+  hence the event-tempid."
   [db-conn event-type event-tempid]
   (let [subscriptions (d/q flare.db.queries/active-subscriptions-by-event
                            (d/db db-conn)
@@ -84,4 +89,9 @@
         [clean-event]
         (make-subscription-notifications db-conn event-type event-tempid)
         (make-user-notifications db-conn event-type event-tempid)))))
+
+(defn process-subscription-notification
+  [sub-n]
+
+  )
 
