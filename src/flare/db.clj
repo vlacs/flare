@@ -12,10 +12,6 @@
   [(schematode/init-schematode-constraints! new-database)
    (schematode/load-schema! new-database schema/schema)])
 
-#_
-(def partitions (merge {:event.type :db.part/user}
-                       (hatch/schematode->partitions schema/schema)))
-
 (def partitions (hatch/schematode->partitions schema/schema))
 (def valid-attrs (merge-with
                   (fn [x y] (vec (concat x y)))
@@ -39,6 +35,12 @@
     entity-map
     (for [[k v] entity-map :when (nil? v)] k))) 
 
+(defn upserted?
+  "Checks to see if an upsert! succeeded.
+  TODO: Ensure the reliability of this fn."
+  [db-promise]
+  (not (nil? @db-promise)))
+
 (defn map-result-keys
   "Uses a query map to determine the keys for values in the result set for
   the given query. It assumes that find only has ?variables as we chop off
@@ -61,4 +63,27 @@
   (map-result-keys
     query
     (apply (partial d/q query) args)))
+
+(defn new-upserter-fn
+  "Higher order function that returns a fn that takes in a db connection
+  and the attributes for the pre-defined entity type. It also strips out nils."
+  [entity-type]
+  (fn upserter
+    [db-conn attrs]
+    (tx-entity!
+      db-conn
+      entity-type
+      (strip-nils attrs))))
+
+(defn new-set-attr-fn
+  "Higher order function that returns a fn that takes in a db conn
+  , entity id, attribute keyword, and value and transacts it."
+  [upserter-fn!]
+  (fn set-attr
+    [db-conn entity-id attr value]
+    (upserted?
+      (upserter-fn!
+        db-conn
+        {:db/id entity-id
+         attr value}))))
 

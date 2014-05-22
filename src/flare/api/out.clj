@@ -1,6 +1,5 @@
 (ns flare.api.out
-  (:require [clojure.edn :as edn]
-            [clojure.data.json :as json]
+  (:require [flare.util :as util]
             [org.httpkit.client :as http]))
 
 (def method-translation
@@ -19,10 +18,6 @@
    :insecure? false
    :follow-redirects false})
 
-(defn edn->json
-  "Converts an EDN payload into a json object."
-  [convertable-string]
-  (json/write-str (edn/read-string convertable-string)))
 
 (defn prep-options
   [method url auth-token payload]
@@ -35,7 +30,7 @@
 (defn prep-payload
   [payload data-format]
   (case data-format
-    :subscription.format/json (edn->json payload)
+    :subscription.format/json (util/edn->json payload)
     payload))
 
 (defn call-api

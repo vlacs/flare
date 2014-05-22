@@ -10,6 +10,10 @@
      [(get-else $ ?client :client/paused? false) ?client-paused]]
     
     [(subscriber-notification-defaults ?sn ?done)
-     [(get-else $ ?sn :subscriber-notification/done? false) ?done]]])
+     [(get-else $ ?sn :subscriber-notification/done? false) ?done]]
+    
+    [(subscriptions-on-type-with-client ?sub ?type ?client)
+     [?sub :subscription/event.type ?type]
+     [?sub :subscription/client ?client]]])
 
 

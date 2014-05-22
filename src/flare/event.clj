@@ -23,7 +23,7 @@
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
-  [db-conn application event-type & description]
+  [db-conn application event-type]
   (let [slammed-event (slam-event-type application event-type)]
     (when @(flare.db/tx-entity!
              db-conn
@@ -70,7 +70,7 @@
   []
   )
 
-(defn event!
+(defn event
   "Prepares datoms describing the event to be transacted in with all of the
   notifications associated with it as of the time event! was called."
   [db-conn event-type event-version user-responsible users-affected message payload]
@@ -89,9 +89,4 @@
         [clean-event]
         (make-subscription-notifications db-conn event-type event-tempid)
         (make-user-notifications db-conn event-type event-tempid)))))
-
-(defn process-subscription-notification
-  [sub-n]
-
-  )
 

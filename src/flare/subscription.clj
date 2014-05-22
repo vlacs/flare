@@ -1,7 +1,7 @@
 (ns flare.subscription
   (:require [datomic.api :as d]
             [flare.util]
-            [flare.db]
+            [flare.db :refer [upserted? new-upserter-fn]]
             [flare.db.rules :as rules]
             [flare.db.queries :as queries]
             [flare.client :as client]
@@ -12,11 +12,29 @@
 (def format-edn :subscription.format/edn)
 (def format-json :subscription.format/json)
 
-(defn subscription-entity-id
+(def upsert! (flare.db/new-upserter-fn :subscription))
+(def set-attr! (flare.db/new-set-attr-fn upsert!))
+
+(defn prep-new
+  [client-eid
+   event-type
+   url-string
+   http-method-keyword
+   format-keyword]
+  (hatch/slam-all
+    {:client client-eid
+     :event.type event-type
+     :url url-string
+     :http-method http-method-keyword
+     :format format-keyword}
+    :subscription))
+
+(defn get-entity-id
   [db-conn client-name event-type]
   (ffirst
     (d/q queries/subscription-entity-id
          (d/db db-conn)
+         rules/defaults
          client-name
          event-type)))
 
@@ -28,48 +46,44 @@
    http-method-keyword
    format-keyword]
   ;;; We can only subscribe to events and clients that are already registered.
-  (let [client-eid (client/entity-id db-conn client-name)]
-    (when (nil? client-eid)
-      (throw
-        (.Exception 
-          (str "Cannot subscribe with a client that doesn't exist."))))
-    (if
-      (not
-        (nil?
-          @(flare.db/tx-entity!
-             db-conn
-             :subscription
-             {:subscription/client client-eid
-              :subscription/event.type event-type
-              :subscription/url url-string
-              :subscription/http-method http-method-keyword
-              :subscription/format format-keyword})))
-      :subscribed
-      nil)))
+  (when-let [client-eid (client/get-entity-id db-conn client-name)]
+    (when
+      (upserted?
+        (upsert!
+          db-conn
+          (prep-new client-eid
+                    event-type
+                    url-string
+                    http-method-keyword
+                    format-keyword)))
+      :subscribed)))
+
+(defn activate!
+  [db-conn client-name event-type]
+   (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+     (when
+       (set-attr! db-conn entity-id :subscription/inactive? false)
+       :activated)))
 
 (defn deactivate!
   "Deactivates a subscription so notifications aren't generated for it."
-  [client-name event-type]
-  :deactivated 
-  )
+   [db-conn client-name event-type]
+   (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+     (when
+       (set-attr! db-conn entity-id :subscription/inactive? true)
+       :deactivated)))
 
 (defn pause!
-  ([db-conn entity-id]
-   (flare.db/tx-entity!
-     :subscription
-     {:db/id entity-id
-      :subscription/paused? true}))
-  ([db-conn client-name event-type]
-   (pause! db-conn
-           (flare.util/required
-             (partial
-               pause!
-               db-conn
-               (subscription-entity-id
-                 db-conn
-                 client-name
-                 event-type))
-             "Subscription specified does not exist."
-             {:client-name client-name
-              :event-type event-type}))))
+  [db-conn client-name event-type]
+  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+    (when
+      (set-attr! db-conn entity-id :subscription/paused? true)
+      :paused)))
+
+(defn resume!
+  [db-conn client-name event-type]
+  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+    (when
+      (set-attr! db-conn entity-id :subscription/paused? false)
+      :resumed)))
 
