@@ -9,6 +9,7 @@
                  [datomic-schematode "0.1.0-RC1"]
                  ;;;^{:voom {:repo "https://github.com/vlacs/helmsman"}}
                  [org.vlacs/helmsman "0.2.6"]
+                 [liberator "0.10.0"]
                  [org.clojure/data.json "0.2.4"]
                  [http-kit "2.1.16"]]
   :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]

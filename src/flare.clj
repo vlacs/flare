@@ -5,6 +5,17 @@
 
 (def schema flare.schema/schema)
 
+#_(defn helmsman
+  [db-conn]
+  [[:context "api"
+    [:context "subscription"
+     [:post "new" new-sub]
+     [:post "pause" subscription-pause]
+     [:post "resume" subscription-resume]]
+    [:context "client"
+     [:post "pause" client-pause]
+     [:post "resume" client-resume]]]])
+ 
 (defn init!
   "Starts up flare for the first time. By default, we don't load up the schema.
   this is because Galleon will do it for us, but in development we will manually
@@ -27,15 +38,5 @@
   [system]
   ;;; Shutdown notification processing
   system)
-
-;;; This is old, we're going to update this soon. :)
-(comment
-  (flare.state/tx-entity! (:db-conn ft-config/system)
-                          :subscription
-                          {:subscription/uri "http://moc.com/"
-                           :subscription/method :subscription.method/put
-                           :subscription/event-type :burnt-toast})
-  (ptouch-that '[:find ?e :where [?e :subscription/uri]])
-  )
 
 
