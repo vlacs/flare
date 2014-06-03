@@ -36,3 +36,7 @@
   [convertable-string]
   (->json (edn/read-string convertable-string)))
  
+;; Flare knows what queues we need, but it doesn't [need to know] what worker fns handle the queues.
+(defn get-queues [system]
+  (assoc-in system [:flare :queues]
+            [:genius :moodle :showevidence]))
