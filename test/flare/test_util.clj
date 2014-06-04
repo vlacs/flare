@@ -2,8 +2,8 @@
   (:require [clojure.test :refer :all]
             [flare.util :as f-util]))
 
-(deftest get-queues-test
-  (testing "get some queues"
-    (is (= {:flare {:queues [:genius :moodle :showevidence]}}
-           (f-util/get-queues {})))))
+(deftest get-attaches-test
+  (testing "get some attaches"
+    (is (= {:flare {:attaches [:genius :moodle :showevidence]}}
+           (f-util/get-attaches {})))))
 
