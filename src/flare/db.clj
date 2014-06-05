@@ -2,7 +2,7 @@
   (:require 
     [datomic.api :as d]
     [flare.schema :as schema]
-    [datomic-schematode.core :as schematode]
+    [datomic-schematode :as schematode]
     [hatch]))
 
 (defn init-database!

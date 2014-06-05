@@ -1,6 +1,6 @@
 (ns flare.test-config
   (:require [datomic.api :as d]
-            [datomic-schematode.core :as schematode]
+            [datomic-schematode :as schematode]
             [flare.schema :as schema]
             [flare.client]
             [flare.event]

@@ -1,8 +1,8 @@
 (ns flare.event
   (:require [datomic.api :as d]
             [flare.db]
-            [flare.db.queries]
-            [flare.db.rules]
+            [flare.db.queries :as queries]
+            [flare.db.rules :as rules]
             [hatch]))
 
 (defn app-event-keyword
@@ -89,4 +89,5 @@
         [clean-event]
         (make-subscription-notifications db-conn event-type event-tempid)
         (make-user-notifications db-conn event-type event-tempid)))))
+
 

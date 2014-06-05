@@ -1,8 +1,9 @@
 (ns flare.util
+  (:import [java.io StringWriter])
   (:require [clojure.java.io :as io]
             [clojure.data.json :as json]
             [clojure.edn :as edn]
-            ))
+            [clojure.pprint :refer [pprint]]))
 
 (defn required
   "Makes sure that the output of a fn in not nil. If it is nil the only
@@ -35,4 +36,7 @@
   "Converts an EDN payload into a json object."
   [convertable-string]
   (->json (edn/read-string convertable-string)))
+
+(defn pprint->str [m]
+  (let [w (StringWriter.)] (pprint m w) (.toString w)))
  
