@@ -4,6 +4,7 @@
             [flare.db.queries :as queries]
             [flare.db.rules :as rules]
             [flare.util :as util]
+            [flare.event :as event]
             [org.httpkit.client :as http]
             [taoensso.timbre :as timbre]))
 
@@ -79,8 +80,10 @@
   [watcher-fn]
   (Thread. watcher-fn))
 
-(defn claim-notifications
+(defn claim-notifications!
   [db-conn thread-uuid batch-uuid]
+  (timbre/debug "Claiming pending notifications if any exist." {:thread-uuid thread-uuid
+                                                                :batch-uuid batch-uuid})
   (d/transact db-conn [[:flare/grab-notifications
                         rules/defaults
                         queries/pending-subscription-notifications
@@ -98,12 +101,13 @@
     (if (not continue?)
       true
       (let [batch-uuid (d/squuid)
-            tx-val (claim-notifications db-conn thread-uuid batch-uuid)]
+            tx-val (claim-notifications! db-conn thread-uuid batch-uuid)]
         (when (nil? tx-val)
           (throw (ex-info "db tx fn :flare/grab-notifications returned nil."
                           {:thread-uuid thread-uuid
                            :batch-uuid batch-uuid})))
         (when (> (count (:tempids @tx-val)) 0)
+          (timbre/debug "Notifications grabbed. Processing them.")
           ;;; Grab them and queue them up.
           (doseq [notification (fetch-batched-notifications db-conn batch-uuid)]
             (outgoing-fn! notification)))
@@ -117,3 +121,19 @@
                         db-conn outgoing-fn!
                         false thread-squuid)))))
  
+(defn make-ping-event!
+  "Makes an event to ping third parties to see if they're accepting requests."
+  [db-conn]
+  (if (flare.db/upserted?
+    (d/transact
+      db-conn
+      (event/event
+        db-conn (event/slam-event-type :flare :ping)
+        :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
+    (do
+      (timbre/debug "Internal ping event successfully generated.")
+      true)
+    (do
+      (timbre/debug "Internal ping event failed to assert.")
+      false)))
+

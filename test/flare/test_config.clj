@@ -4,7 +4,9 @@
             [flare.schema :as schema]
             [flare.client]
             [flare.event :as event]
-            [flare.subscription :as sub]))
+            [flare.subscription :as sub]
+            [flare.api.out]
+            [taoensso.timbre :as timbre]))
 
 (def system {:datomic-uri "datomic:mem://flare-test"})
 (def datomic-uri (:datomic-uri system))
@@ -21,6 +23,7 @@
 
 (defn tx-testing-data!
   [db-conn]
+  (timbre/debug "Starting to transact testing data.")
   (doseq [et testing-events]
     (apply (partial flare.event/register! db-conn) et)) 
   (doseq [c testing-clients]
@@ -30,6 +33,9 @@
         db-conn c (apply event/slam-event-type et)
         testing-url flare.subscription/http-method-post
         flare.subscription/format-json)))
+  (dotimes [n 5]
+    (flare.api.out/make-ping-event! db-conn))
+  (timbre/debug "Testing data has successfully been transacted.")
   :done)
 
 (defn start-datomic! [system]

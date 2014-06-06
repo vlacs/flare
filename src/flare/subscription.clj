@@ -5,7 +5,8 @@
             [flare.db.rules :as rules]
             [flare.db.queries :as queries]
             [flare.client :as client]
-            [flare.event :as event]))
+            [flare.event :as event]
+            [taoensso.timbre :as timbre]))
 
 (def http-method-post :subscription.http-method/post)
 (def http-method-put :subscription.http-method/put)
@@ -46,32 +47,39 @@
    http-method-keyword
    format-keyword]
   ;;; We can only subscribe to events and clients that are already registered.
-  (when-let [client-eid (client/get-entity-id db-conn client-name)]
-    (when
-      (upserted?
-        (upsert!
-          db-conn
-          (prep-new client-eid
-                    event-type
-                    url-string
-                    http-method-keyword
-                    format-keyword)))
-      :subscribed)))
+  (if-let [client-eid (client/get-entity-id db-conn client-name)]
+    (let [new-sub-entity (prep-new client-eid
+                                   event-type
+                                   url-string
+                                   http-method-keyword
+                                   format-keyword)]
+      (if
+        (upserted?
+          (upsert!
+            db-conn
+            new-sub-entity))
+        (do
+          (timbre/debug "Subscription added." client-name event-type)
+          :subscribed)
+        (timbre/debug "Failed to add the subscription to Datomic."
+                      new-sub-entity)))
+    (timbre/debug "Aborted subscription creation. No such client." client-name)
+    ))
 
 (defn activate!
   [db-conn client-name event-type]
-   (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-     (when
-       (set-attr! db-conn entity-id :subscription/inactive? false)
-       :activated)))
+  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+    (when
+      (set-attr! db-conn entity-id :subscription/inactive? false)
+      :activated)))
 
 (defn deactivate!
   "Deactivates a subscription so notifications aren't generated for it."
-   [db-conn client-name event-type]
-   (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-     (when
-       (set-attr! db-conn entity-id :subscription/inactive? true)
-       :deactivated)))
+  [db-conn client-name event-type]
+  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
+    (when
+      (set-attr! db-conn entity-id :subscription/inactive? true)
+      :deactivated)))
 
 (defn pause!
   [db-conn client-name event-type]

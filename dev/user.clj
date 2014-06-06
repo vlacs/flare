@@ -30,6 +30,7 @@
   (flare/init! true ft-config/system)
   ;;; Tie our env. to our application.
   (flare/start! ft-config/system)
+  (ft-config/tx-testing-data! (:db-conn ft-config/system))
   ;;; Bind the database connection so devs can use it.
   (alter-var-root #'user/db (constantly (:db-conn ft-config/system))))
 

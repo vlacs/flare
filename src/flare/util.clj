@@ -32,6 +32,10 @@
   [jsonable]
   (json/write-str jsonable))
 
+(defn ->edn
+  [ednable]
+  (pr-str ednable))
+
 (defn edn->json
   "Converts an EDN payload into a json object."
   [convertable-string]
