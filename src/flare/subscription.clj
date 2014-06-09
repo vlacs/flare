@@ -63,35 +63,32 @@
           :subscribed)
         (timbre/debug "Failed to add the subscription to Datomic."
                       new-sub-entity)))
-    (timbre/debug "Aborted subscription creation. No such client." client-name)
+    (timbre/debug "Aborting subscription creation. No such client." client-name)
     ))
+
+(defn alter-sub-attr!
+  [db-conn client-name event-type attr value]
+  (if-let [entity-id (get-entity-id db-conn client-name event-type)]
+    (do
+      (timbre/debug "Subscription attribute asserted (k v): " attr value)
+      (set-attr! db-conn entity-id attr value))
+    (timbre/debug "Unable to assert subscription attribute. Subscription does not exist."
+                  client-name event-type)))
 
 (defn activate!
   [db-conn client-name event-type]
-  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-    (when
-      (set-attr! db-conn entity-id :subscription/inactive? false)
-      :activated)))
+  (alter-sub-attr! db-conn client-name event-type :subscription/inactive? false))
 
 (defn deactivate!
   "Deactivates a subscription so notifications aren't generated for it."
   [db-conn client-name event-type]
-  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-    (when
-      (set-attr! db-conn entity-id :subscription/inactive? true)
-      :deactivated)))
+  (alter-sub-attr! db-conn client-name event-type :subscription/inactive? true))
 
 (defn pause!
   [db-conn client-name event-type]
-  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-    (when
-      (set-attr! db-conn entity-id :subscription/paused? true)
-      :paused)))
+  (alter-sub-attr! db-conn client-name event-type :subscription/paused? true))
 
 (defn resume!
   [db-conn client-name event-type]
-  (when-let [entity-id (get-entity-id db-conn client-name event-type)]
-    (when
-      (set-attr! db-conn entity-id :subscription/paused? false)
-      :resumed)))
+  (alter-sub-attr! db-conn client-name event-type :subscription/paused? false))
 

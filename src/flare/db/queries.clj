@@ -51,27 +51,16 @@
             [?event :event/payload ?payload]]})
 
 (def pending-subscription-notifications
-  '{:find [?sn
-           ?payload
-           ?url
-           ?auth-token
-           ?http-method
-           ?format]
+  '{:find [?subscriber-notification-eid
+           ?client-eid]
     :in [$ %]
-    :where [[?sn :subscriber-notification/subscription ?sub]
-            [(missing? $ ?sn :subscriber-notification/thread-batch)]
-            (subscriber-notification-defaults ?sn false)
-            [?sn :subscriber-notification/event ?event]
+    :where [[?subscriber-notification-eid :subscriber-notification/subscription ?sub]
+            [(missing? $ ?subscriber-notification-eid :subscriber-notification/thread-batch)]
+            (subscriber-notification-defaults ?subscriber-notification-eid false)
+            [?subscriber-notification-eid :subscriber-notification/event ?event]
             (subscription-defaults ?sub ?sub-inactive false)
-            (?sub :subscription/client ?cli) 
-            (client-defaults ?cli ?cli-inactive false)
-            [?cli :client/auth-token ?auth-token]
-            [?event :event/payload ?payload]   
-            [?sub :subscription/url ?url]
-            [?sub :subscription/http-method ?http-method-enum]
-            [?sub :subscription/format ?format-enum]
-            [?http-method-enum :db/ident ?http-method]
-            [?format-enum :db/ident ?format]]})
+            (?sub :subscription/client ?client-eid) 
+            (client-defaults ?client-eid ?cli-inactive false)]})
 
 (def notifications-by-batch-uuid
   '{:find [?notification
