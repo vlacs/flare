@@ -1,13 +1,14 @@
 (ns flare
-  (:require [flare.schema :as schema]
-            [datomic.api :as d]
+  (:require [datomic.api :as d]
             [flare.db]
             [flare.db.queries]
             [flare.db.rules]
+            [flare.schema]
             [flare.event]
             [hatch]))
 
 (def schema flare.schema/schema)
+(def event flare.event/event)
 
 (defn init!
   "Starts up flare for the first time. By default, we don't load up the schema.
@@ -32,16 +33,3 @@
   ;;; Shutdown notification processing
   system)
 
-(def event flare.event/event)
-
-(defn tx-notify!
-  "Wrapper for hatch/tx! transacts and asyncronously adds the event to the
-  queue for processing. The first item should always be the event entity to
-  be transacted."
-  [db-conn txs]
-  (let [event-tempid (:db/id (first txs))
-        dr @(hatch/tx! db-conn txs)
-        db (d/db db-conn)]
-    (d/q flare.db.queries/subscriptions-notifications
-         db flare.db.rules/defaults
-         (d/resolve-tempid db (:tempids dr) event-tempid))))
