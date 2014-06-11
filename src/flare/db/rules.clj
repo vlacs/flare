@@ -9,8 +9,8 @@
      [(get-else $ ?client :client/inactive? false) ?client-inactive]
      [(get-else $ ?client :client/paused? false) ?client-paused]]
     
-    [(subscriber-notification-defaults ?sn ?done)
-     [(get-else $ ?sn :subscriber-notification/done? false) ?done]]
+    [(subscriber-notification-defaults ?sn ?status)
+     [(get-else $ ?sn :subscriber-notification/status false) ?status]]
     
     [(subscriptions-on-type-with-client ?sub ?type ?client)
      [?sub :subscription/event.type ?type]

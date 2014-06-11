@@ -1,9 +1,10 @@
 (ns flare.event
   (:require [datomic.api :as d]
             [flare.db]
-            [flare.db.queries]
-            [flare.db.rules]
-            [hatch]))
+            [flare.db.queries :as queries]
+            [flare.db.rules :as rules]
+            [hatch]
+            [taoensso.timbre :as timbre]))
 
 (defn app-event-keyword
   [app event]
@@ -25,13 +26,16 @@
   "Makes flare aware of a particular event so subscribers can subscribe to it."
   [db-conn application event-type]
   (let [slammed-event (slam-event-type application event-type)]
-    (when @(flare.db/tx-entity!
+    (if @(flare.db/tx-entity!
              db-conn
              :event.type
              {:db/ident slammed-event
               :event.type/application application
               :event.type/name event-type})
-      slammed-event)))
+      (do
+        (timbre/debug "New event has been registered: " (str slammed-event))
+        slammed-event)
+      (timbre/debug "New event failed to register: " (str slam-event-type)))))
 
 (defn new-subscription-notification-instance
   "Creates a notification instance based on a to-be-transacted event by the

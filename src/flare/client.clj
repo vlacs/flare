@@ -3,7 +3,9 @@
             [flare.db :refer [new-upserter-fn upserted?]]
             [flare.db.queries :as queries]
             [flare.db.rules :as rules]
-            [hatch]))
+            [hatch]
+            [taoensso.timbre :as timbre]
+            ))
 
 (defn get-entity-id
   "Get the entity id of a client."
@@ -39,6 +41,7 @@
       (upsert!
         db-conn
         (prep-new client-name auth-token)))
+    (timbre/debug "New client has been added." client-name)
     :added))
 
 (defn deactivate!
@@ -47,6 +50,7 @@
    (when-let [entity-id (get-entity-id db-conn client-name)]
      (when
        (set-attr! db-conn entity-id :client/inactive? true)
+       (timbre/debug "Client deactivated." client-name)
        :deactivated)))
 
 (defn activate!
@@ -55,6 +59,7 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/inactive? false)
+      (timbre/debug "Client activated." client-name)
       :activated)))
 
 (defn pause!
@@ -62,6 +67,7 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/paused? true)
+      (timbre/debug "Client paused." client-name)
       :paused)))
 
 (defn resume!
@@ -69,5 +75,6 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/paused? false)
+      (timbre/debug "Client resumed." client-name)
       :resumed)))
 

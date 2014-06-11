@@ -2,7 +2,7 @@
   (:require 
     [datomic.api :as d]
     [flare.schema :as schema]
-    [datomic-schematode.core :as schematode]
+    [datomic-schematode :as schematode]
     [hatch]))
 
 (defn init-database!
@@ -77,7 +77,8 @@
 
 (defn new-set-attr-fn
   "Higher order function that returns a fn that takes in a db conn
-  , entity id, attribute keyword, and value and transacts it."
+  , entity id, attribute keyword, and value and transacts it. The return
+  value will be a boolean that represents the success of the transaction."
   [upserter-fn!]
   (fn set-attr
     [db-conn entity-id attr value]

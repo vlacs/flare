@@ -12,7 +12,7 @@
    [clojure.test :as test]
    [clojure.tools.namespace.repl :refer (refresh refresh-all)]
    [datomic.api :as d]
-   [datomic-schematode.core :as schematode]
+   [datomic-schematode :as schematode]
    [clojure.edn :as edn]
    [flare]
    [flare.schema :as schema]
