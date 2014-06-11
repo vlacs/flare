@@ -141,9 +141,8 @@
     (when-let [thread-eid (tx-entity!->eid db-conn :thread {:thread/uuid thread-squuid})]
       (timbre/debug "New thread created." {:uuid thread-squuid
                                            :eid thread-eid})
-      (Thread. (partial notification-watcher db-conn
-                        outgoing-fn! client-eid
-                        false thread-eid)))))
+      (Thread. (fn make-notification-watcher-thread- []
+                 (notification-watcher db-conn outgoing-fn! client-eid false thread-eid))))))
 
 (defn make-ping-event!
   "Makes an event to ping third parties to see if they're accepting requests."
