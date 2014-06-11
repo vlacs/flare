@@ -51,9 +51,8 @@
             [?event :event/payload ?payload]]})
 
 (def pending-subscription-notifications
-  '{:find [?subscriber-notification-eid
-           ?client-eid]
-    :in [$ %]
+  '{:find [?subscriber-notification-eid]
+    :in [$ % ?client-eid]
     :where [[?subscriber-notification-eid :subscriber-notification/subscription ?sub]
             [(missing? $ ?subscriber-notification-eid :subscriber-notification/thread-batch)]
             (subscriber-notification-defaults ?subscriber-notification-eid false)
@@ -62,14 +61,18 @@
             (?sub :subscription/client ?client-eid) 
             (client-defaults ?client-eid ?cli-inactive false)]})
 
-(def notifications-by-batch-uuid
+(def subscriber-notification-entities-by-batch
+  '{:find [?e]
+    :in [$ ?batch-eid]
+    :where [[?e :subscriber-notification/thread-batch ?batch-eid]]})
+
+(def notifications-by-batch
   '{:find [?notification
            ?payload ?version
            ?url ?auth-token
            ?http-method ?format]
-    :in [$ % ?batch-uuid]
-    :where [[?tb :thread-batch/batch ?batch-uuid]
-            [?notification :subscriber-notification/thread-batch ?tb]
+    :in [$ % ?batch-eid]
+    :where [[?notification :subscriber-notification/thread-batch ?batch-eid]
             [?evt-eid :subscriber-notification/event ?notification]
             [?sub-eid :subscriber-notification/subscription ?notification]
             [?cli-eid :subscription/client ?sub-eid]

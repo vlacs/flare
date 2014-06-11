@@ -66,7 +66,7 @@
             ;; use a datomic rule to default to false for
             ;; :done? when it's not set
             [:status :enum [:enqueued :complete]]
-            [:thread-batch :ref]]
+            [:thread-batch :ref :indexed]]
     :dbfns [(constraints/unique
               :subscriber-notification
               :event :subscription)]}  
@@ -76,7 +76,7 @@
 
    {:namespace :thread-batch
     :attrs [[:thread :ref]
-            [:batch :uuid]]}
+            [:uuid :uuid]]}
 
    ;;; Analagous to subcriber notification, but we don't need to deliver the
    ;;; notification. We wait until a user dismisses it.
@@ -95,16 +95,21 @@
       (d/function
         '{:lang "clojure"
           :params [db
-                   default-rules grabber-query
-                   thread-eid batch-squuid]
-          :code (let [thread-eid 
-                      ub-notes
+                   default-rules
+                   grabber-query
+                   client-eid
+                   batch-entity]
+          :code (let [ub-notes
                       (d/q
                         grabber-query
                         db
-                        default-rules)]
-                  (if (not (empty? ub-notes))
-                    (map (fn [i] {:db/id (first i)
-                                  :subscriber-notification/thread thread-squuid}) ub-notes)
-                    nil))})}]}])
+                        default-rules
+                        client-eid)
+                      batch-tempid (:db/id batch-entity)]
+                  (when (not (empty? ub-notes))
+                    (cons batch-entity
+                          (vec
+                            (map (fn [i] {:db/id (first i)
+                                          :subscriber-notification/thread-batch batch-tempid})
+                                 ub-notes)))))})}]}])
 

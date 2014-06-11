@@ -1,5 +1,6 @@
 (ns flare.api.out
   (:require [datomic.api :as d]
+            [hatch]
             [flare.db]
             [flare.db.queries :as queries]
             [flare.db.rules :as rules]
@@ -13,10 +14,27 @@
   (timbre/debug (str "Outgoing-fn! message:\n"
                      (util/pprint->str message))))
 
+(defn tx-entity!->eid
+  [db-conn entity-type attrs]
+  (let [prepped-entity (hatch/ensure-db-id
+                         flare.db/partitions
+                         entity-type
+                         attrs)]
+    (when-let
+      [rval
+       @(flare.db/tx-entity!
+          db-conn
+          entity-type
+          prepped-entity)]
+      (d/resolve-tempid
+        (d/db db-conn)
+        (:tempids rval)
+        (:db/id prepped-entity)))))
+
 (def method-translation
   {:subscription.http-method/put :put
    :subscription.http-method/post :post})
- 
+
 (def default-opts
   {:timeout 60
    :user-agent "org.vlacs/flare/http-kit"
@@ -81,55 +99,61 @@
   (Thread. watcher-fn))
 
 (defn claim-notifications!
-  [db-conn thread-uuid batch-uuid]
-  (timbre/debug "Claiming pending notifications if any exist." {:thread-uuid thread-uuid
-                                                                :batch-uuid batch-uuid})
-  (d/transact db-conn [[:flare/grab-notifications
-                        rules/defaults
-                        queries/pending-subscription-notifications
-                        thread-uuid
-                        batch-uuid]]))
+  [db-conn client-eid batch-entity]
+  (when-let [tx-rval
+             (d/transact db-conn [[:flare/grab-notifications
+                                   rules/defaults
+                                   queries/pending-subscription-notifications
+                                   client-eid
+                                   batch-entity]])]
+    (when (> (count (:tempids @tx-rval)) 0)
+      (d/resolve-tempid (d/db db-conn) (:tempids @tx-rval) (:db/id batch-entity)))))
 
 (defn fetch-batched-notifications
-  [db-conn batch-uuid]
-  (d/q queries/notifications-by-batch-uuid
-       (d/db db-conn) rules/defaults batch-uuid))
+  [db-conn batch-eid]
+  (d/q queries/subscriber-notification-entities-by-batch
+       (d/db db-conn) batch-eid))
 
 (defn notification-watcher
-  [db-conn outgoing-fn! single-run? thread-uuid]
+  [db-conn outgoing-fn! client-eid single-run? thread-eid]
   (loop [continue? true]
     (if (not continue?)
       true
-      (let [batch-uuid (d/squuid)
-            tx-val (claim-notifications! db-conn thread-uuid batch-uuid)]
-        (when (nil? tx-val)
-          (throw (ex-info "db tx fn :flare/grab-notifications returned nil."
-                          {:thread-uuid thread-uuid
-                           :batch-uuid batch-uuid})))
-        (when (> (count (:tempids @tx-val)) 0)
-          (timbre/debug "Notifications grabbed. Processing them.")
-          ;;; Grab them and queue them up.
-          (doseq [notification (fetch-batched-notifications db-conn batch-uuid)]
-            (outgoing-fn! notification)))
+      (let [batch-entity (hatch/ensure-db-id
+                           flare.db/partitions
+                           :thread-batch
+                           {:thread-batch/thread thread-eid
+                            :thread-batch/uuid (d/squuid)})
+            batch-eid (claim-notifications! db-conn client-eid batch-entity)]
+        (if (nil? batch-eid)
+          (do
+            (Thread/sleep 2000))
+          (do
+            (timbre/debug "Notifications grabbed. Processing them." {:batch-eid batch-eid})
+            ;;; Grab them and queue them up.
+            (doseq [notification (fetch-batched-notifications db-conn batch-eid)]
+              (outgoing-fn! (first notification)))))
         (recur (and continue? (not single-run?)))))))
 
 (defn make-notification-watcher-thread
-  [db-conn outgoing-fn!]
+  [db-conn outgoing-fn! client-eid]
   (let [thread-squuid (d/squuid)]
-    (when (flare.db/tx-entity! db-conn :thread {:thread/uuid thread-squuid})
-      (Thread. (partial notification-watcher
-                        db-conn outgoing-fn!
-                        false thread-squuid)))))
- 
+    (when-let [thread-eid (tx-entity!->eid db-conn :thread {:thread/uuid thread-squuid})]
+      (timbre/debug "New thread created." {:uuid thread-squuid
+                                           :eid thread-eid})
+      (Thread. (partial notification-watcher db-conn
+                        outgoing-fn! client-eid
+                        false thread-eid)))))
+
 (defn make-ping-event!
   "Makes an event to ping third parties to see if they're accepting requests."
   [db-conn]
   (if (flare.db/upserted?
-    (d/transact
-      db-conn
-      (event/event
-        db-conn (event/slam-event-type :flare :ping)
-        :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
+        (d/transact
+          db-conn
+          (event/event
+            db-conn (event/slam-event-type :flare :ping)
+            :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
     (do
       (timbre/debug "Internal ping event successfully generated.")
       true)
