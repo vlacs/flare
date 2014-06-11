@@ -29,7 +29,7 @@
    ;;; Describes clients that can subscribe and their credentials.
    ;;; These should be manually entered.
    {:namespace :client
-    :attrs [[:name :string :db.unique/identity]
+    :attrs [[:name :keyword :db.unique/identity]
             [:auth-token :string]
             [:paused? :boolean] ;;; Not processing any notifications.
             [:inactive? :boolean] ;;; Not making any notifications.
