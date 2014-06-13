@@ -59,6 +59,11 @@
   "Wraps up everything flare is working on so we can cleanly shutdown."
   [system]
   (doseq [t (get-in system [:flare :notification-threads])]
-    (.stop t))
+    (timbre/debug "Client watcher threads for: " (first t))
+    (doseq [thr (second t)]
+      (timbre/debug "Stopping thread.")
+      (.stop thr)
+      (timbre/debug "Thread stopped."))
+    (timbre/debug "Client watchers stopped for: " (first t)))
   system)
 
