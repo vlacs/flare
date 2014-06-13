@@ -11,8 +11,7 @@
 
 (defn default-outgoing-fn!
   [message]
-  (timbre/debug (str "Outgoing-fn! message:\n"
-                     (util/pprint->str message))))
+  (timbre/debug "Outgoing-fn! message:" message))
 
 (defn tx-entity!->eid
   [db-conn entity-type attrs]
@@ -116,6 +115,13 @@
 
 (defn notification-watcher
   [db-conn outgoing-fn! client-eid single-run? thread-eid]
+  (when (not (fn? outgoing-fn!))
+    (let [ex (ex-info "outgoing-fn! must be a fn!" {:outgoing-fn! outgoing-fn!})]
+      (timbre/fatal ex)
+      (throw ex)))
+  (when (not single-run?)
+    (timbre/debug "Flare notification watcher thread started."
+           {:client-eid client-eid :thread-eid thread-eid}))
   (loop [continue? true]
     (if (not continue?)
       true
@@ -126,10 +132,11 @@
                             :thread-batch/uuid (d/squuid)})
             batch-eid (claim-notifications! db-conn client-eid batch-entity)]
         (if (nil? batch-eid)
+          (Thread/sleep 1000)
           (do
-            (Thread/sleep 2000))
-          (do
-            (timbre/debug "Notifications grabbed. Processing them." {:batch-eid batch-eid})
+            (timbre/debug "Notifications grabbed. Processing them."
+                          {:thread-eid thread-eid
+                           :batch-eid batch-eid})
             ;;; Grab them and queue them up.
             (doseq [notification (fetch-batched-notifications db-conn batch-eid)]
               (outgoing-fn! (first notification)))))
