@@ -29,9 +29,11 @@
   "Brings flare up so we'll be ready for business."
   [system]
   ;;; Create the clients that are inside the system.
+  (timbre/debug "Configuring Flare...")
   (let [db-conn (:db-conn system)]
     (doseq [client (get-in system [:attaches :endpoints])]
       (when (not (flare.client/registered? db-conn client))
+        (timbre/debug "Found a new client... Adding it." client)
         (flare.client/add! (:db-conn system) client (str (d/squuid))))))
   system)
 
