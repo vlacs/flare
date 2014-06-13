@@ -26,13 +26,17 @@
 (defn go []
   ;;; Start our testing enviornment.
   (ft-config/start!)
-  ;;; Initialize flare including loading the schema.
-  (flare/init! true ft-config/system)
-  ;;; Tie our env. to our application.
-  (flare/start! ft-config/system)
-  (ft-config/tx-testing-data! (:db-conn ft-config/system))
   ;;; Bind the database connection so devs can use it.
-  (alter-var-root #'user/db (constantly (:db-conn ft-config/system))))
+  (alter-var-root #'user/db (constantly (:db-conn ft-config/system))) 
+
+  ;;; Initialize flare including loading the schema.
+  (alter-var-root 
+    #'ft-config/system 
+    (constantly
+      (-> (flare/init! true ft-config/system)
+          flare/configure!
+          flare/start!)))
+  (ft-config/tx-testing-data! ft-config/system))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
