@@ -12,10 +12,10 @@
              :config {:flare
                       {:threads-per-client 1}}
              :attaches {:endpoints
-                        [:moodle :showevidence]}
-             :flare {:outgoing-fns
-                     {:moodle flare.api.out/default-outgoing-fn!
-                      :showevidence flare.api.out/default-outgoing-fn!}}})
+                        [:moodle :showevidence]
+                        :outgoing-fns
+                        {:moodle flare.api.out/default-outgoing-fn!
+                         :showevidence flare.api.out/default-outgoing-fn!}}})
 (def datomic-uri (:datomic-uri system))
 (def testing-auth-token "abc123")
 (def testing-events [[:flare :ping]

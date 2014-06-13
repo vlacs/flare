@@ -30,6 +30,7 @@
   [system]
   ;;; Create the clients that are inside the system.
   (timbre/debug "Configuring Flare...")
+  (timbre/debug "Endpoints?" (get-in system [:attaches :endpoints]))
   (let [db-conn (:db-conn system)]
     (doseq [client (get-in system [:attaches :endpoints])]
       (when (not (flare.client/registered? db-conn client))
@@ -51,7 +52,7 @@
                               (partial
                                 flare.api.out/make-notification-watcher-thread
                                 (:db-conn system)
-                                (get-in system [:flare :outgoing-fns client])
+                                (get-in system [:attaches :outgoing-fns client])
                                 client-eid))]
                       (do
                         (.start t)
