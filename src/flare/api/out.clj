@@ -99,14 +99,18 @@
 
 (defn claim-notifications!
   [db-conn client-eid batch-entity]
-  (when-let [tx-rval
-             (d/transact db-conn [[:flare/grab-notifications
-                                   rules/defaults
-                                   queries/pending-subscription-notifications
-                                   client-eid
-                                   batch-entity]])]
-    (when (> (count (:tempids @tx-rval)) 0)
-      (d/resolve-tempid (d/db db-conn) (:tempids @tx-rval) (:db/id batch-entity)))))
+  (when (first (d/q queries/pending-subscription-notifications
+                    (d/db db-conn)
+                    rules/defaults
+                    client-eid))
+    (when-let [tx-rval
+               (d/transact db-conn [[:flare/grab-notifications
+                                     rules/defaults
+                                     queries/pending-subscription-notifications
+                                     client-eid
+                                     batch-entity]])]
+      (when (> (count (:tempids @tx-rval)) 0)
+        (d/resolve-tempid (d/db db-conn) (:tempids @tx-rval) (:db/id batch-entity))))))
 
 (defn fetch-batched-notifications
   [db-conn batch-eid]
