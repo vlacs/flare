@@ -80,6 +80,12 @@ namespace. It looks something like this:
           (event/event
             db-conn (event/slam-event-type :flare :ping)
             :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
+    (do
+      (timbre/debug "Internal ping event successfully generated.")
+      true)
+    (do
+      (timbre/debug "Internal ping event failed to assert.")
+      false)))
 ```
 
 ### Notifications
