@@ -18,13 +18,13 @@ in your project.clj file.
 ## Getting started
 Making events is very easy. There are are just two things you need to know about
 creating events.
-    1. All events must be registered with Flare. Flare must know about the kinds of
-    events that are being made before it is told about them.
-    2. All events and notifications are transacted with the data the generates it.
-        * This is a little unclear, Flare create event and notification data
-        associated with a type. It's up to the calling application to transact the
-        event and notifications with the data that is creating the event. That is
-        what makes the event itself atomic.
+* All events must be registered with Flare. Flare must know about the kinds of
+events that are being made before it is told about them.
+* All events and notifications are transacted with the data the generates it.
+    * This is a little unclear, Flare create event and notification data
+    associated with a type. It's up to the calling application to transact the
+    event and notifications with the data that is creating the event. That is
+    what makes the event itself atomic.
 
 ### Registering an event type
 Registering an event type is very easy. Flare has a 3 argument fn that will
