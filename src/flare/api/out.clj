@@ -124,7 +124,7 @@
       (timbre/fatal ex)
       (throw ex)))
   (when (not single-run?)
-    (timbre/debug "Flare notification watcher thread started."
+    (timbre/info "Flare notification watcher thread started."
            {:client-eid client-eid :thread-eid thread-eid}))
   (loop [continue? true]
     (if (not continue?)
@@ -150,7 +150,7 @@
   [db-conn outgoing-fn! client-eid]
   (let [thread-squuid (d/squuid)]
     (when-let [thread-eid (tx-entity!->eid db-conn :thread {:thread/uuid thread-squuid})]
-      (timbre/debug "New thread created." {:uuid thread-squuid
+      (timbre/info "New thread created." {:uuid thread-squuid
                                            :eid thread-eid})
       (Thread. (fn make-notification-watcher-thread- []
                  (notification-watcher db-conn outgoing-fn! client-eid false thread-eid))))))
@@ -165,9 +165,9 @@
             db-conn (event/slam-event-type :flare :ping)
             :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
     (do
-      (timbre/debug "Internal ping event successfully generated.")
+      (timbre/info "Internal ping event successfully generated.")
       true)
     (do
-      (timbre/debug "Internal ping event failed to assert.")
+      (timbre/error "Internal ping event failed to assert.")
       false)))
 

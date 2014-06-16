@@ -59,11 +59,11 @@
             db-conn
             new-sub-entity))
         (do
-          (timbre/debug "Subscription added." client-name event-type)
+          (timbre/info "Subscription added." client-name event-type)
           :subscribed)
-        (timbre/debug "Failed to add the subscription to Datomic."
+        (timbre/error "Failed to add the subscription to Datomic."
                       new-sub-entity)))
-    (timbre/debug "Aborting subscription creation. No such client." client-name)
+    (timbre/error "Aborting subscription creation. No such client." client-name)
     ))
 
 (defn alter-sub-attr!
@@ -72,7 +72,7 @@
     (do
       (timbre/debug "Subscription attribute asserted (k v): " attr value)
       (set-attr! db-conn entity-id attr value))
-    (timbre/debug "Unable to assert subscription attribute. Subscription does not exist."
+    (timbre/error "Unable to assert subscription attribute. Subscription does not exist."
                   client-name event-type)))
 
 (defn activate!

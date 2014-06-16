@@ -33,9 +33,9 @@
               :event.type/application application
               :event.type/name event-type})
       (do
-        (timbre/debug "New event has been registered: " (str slammed-event))
+        (timbre/info "New event has been registered: " (str slammed-event))
         slammed-event)
-      (timbre/debug "New event failed to register: " (str slam-event-type)))))
+      (timbre/info "New event failed to register: " (str slam-event-type)))))
 
 (defn new-subscription-notification-instance
   "Creates a notification instance based on a to-be-transacted event by the
