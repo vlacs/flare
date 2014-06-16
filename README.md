@@ -18,7 +18,7 @@ in your project.clj file.
 ## Running Tests
 You can build the necessary dependencies and run the tests with one command.
 
-'''$ sh test.sh'''
+```$ sh test.sh```
 
 ## Getting started
 Making events is very easy. There are are just two things you need to know about
