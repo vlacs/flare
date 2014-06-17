@@ -153,6 +153,7 @@
       (timbre/info "New thread created." {:uuid thread-squuid
                                            :eid thread-eid})
       (Thread. (fn make-notification-watcher-thread- []
+                 (.setName (Thread/currentThread) (str "Flare notification worker  " thread-eid))
                  (notification-watcher db-conn outgoing-fn! client-eid false thread-eid))))))
 
 (defn make-ping-event!
