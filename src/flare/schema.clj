@@ -15,7 +15,6 @@
     :attrs [[:application :keyword]
             [:name :keyword]
             [:current-version :keyword]
-            [:event-shape :string]
             [:description :string]]}
 
    {:namespace :event
