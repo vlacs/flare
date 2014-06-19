@@ -15,13 +15,25 @@
     :attrs [[:application :keyword]
             [:name :keyword]
             [:current-version :keyword]
-            [:description :string]]}
+            [:description :string]
+            [:triggering-attrs :ref :many]]}
 
+   ;; These attrs are asserted on tx entities
+   {:namespace :tx-event
+    :attrs [[:thread-batch :ref :indexed]
+            [:processing-completed? :boolean]
+            ;; someday: [:user-responsible :ref :one]
+            ]}
+
+   #_
    {:namespace :event
     :attrs [[:type :enum [] :indexed]
             [:version :keyword]
+            ;; attach to tx
             [:users-affected :ref :many]
+            ;; attach to tx
             [:user-responsible :ref :one]
+            ;; handle elsewhere
             [:message :string]
             [:payload :string]]}
 
@@ -56,15 +68,16 @@
    ;;; A subscriber notification describes what subscription is being told about
    ;;; a particular assertion and whether or not it has been delivered.
    {:namespace :subscriber-notification
-    :attrs [[:event :ref]
+    :attrs [[:tx :ref]
             [:subscription :ref]
-            [:attempt-instants :instant :many]
+            [:attempt-count :long]
             [:last-http-status :bigint]
             [:last-reply-body :string]
             ;; https://groups.google.com/forum/#!topic/datomic/p3FLisquFH8
             ;; use a datomic rule to default to false for
             ;; :done? when it's not set
-            [:status :enum [:enqueued :complete]]
+            [:status :enum [:in-progress :complete]]
+            [:success? :boolean]
             [:thread-batch :ref :indexed]]
     :dbfns [(constraints/unique
               :subscriber-notification
