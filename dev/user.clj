@@ -36,7 +36,9 @@
       (-> (flare/init! true ft-config/system)
           flare/configure!
           flare/start!)))
-  (ft-config/tx-testing-data! ft-config/system))
+  
+  ;;; Transact some data to work with.
+  (ft-config/tx-testing! (:db-conn ft-config/system)))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."

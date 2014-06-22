@@ -34,7 +34,7 @@
   [db-conn client-name]
   (not (nil? (get-entity-id db-conn client-name))))
 
-(defn add!
+(defn register!
   [db-conn client-name auth-token]
   (when
     (upserted?

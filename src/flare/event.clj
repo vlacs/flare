@@ -24,14 +24,15 @@
 
 (defn register!
   "Makes flare aware of a particular event so subscribers can subscribe to it."
-  [db-conn application event-type]
+  [db-conn application event-type triggering-attrs]
   (let [slammed-event (slam-event-type application event-type)]
     (if @(flare.db/tx-entity!
              db-conn
              :event.type
              {:db/ident slammed-event
               :event.type/application application
-              :event.type/name event-type})
+              :event.type/name event-type
+              :event.type/triggering-attrs triggering-attrs})
       (do
         (timbre/info "New event has been registered: " (str slammed-event))
         slammed-event)
@@ -74,6 +75,8 @@
   []
   )
 
+;;; Remove this.
+#_
 (defn event
   "Prepares datoms describing the event to be transacted in with all of the
   notifications associated with it as of the time event! was called."

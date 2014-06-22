@@ -156,19 +156,3 @@
                  (.setName (Thread/currentThread) (str "Flare notification worker  " thread-eid))
                  (notification-watcher db-conn outgoing-fn! client-eid false thread-eid))))))
 
-(defn make-ping-event!
-  "Makes an event to ping third parties to see if they're accepting requests."
-  [db-conn]
-  (if (flare.db/upserted?
-        (d/transact
-          db-conn
-          (event/event
-            db-conn (event/slam-event-type :flare :ping)
-            :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
-    (do
-      (timbre/info "Internal ping event successfully generated.")
-      true)
-    (do
-      (timbre/error "Internal ping event failed to assert.")
-      false)))
-
