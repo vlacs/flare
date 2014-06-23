@@ -8,10 +8,16 @@
             [flare.api.out]
             [taoensso.timbre :as timbre]))
 
-(def system {:datomic-uri "datomic:mem://flare-test"})
+(def system {:datomic-uri "datomic:mem://flare-test"
+             :config {:flare
+                      {:threads-per-client 1}}
+             :attaches {:endpoints
+                        [:moodle :showevidence]
+                        :outgoing-fns
+                        {:moodle flare.api.out/default-outgoing-fn!
+                         :showevidence flare.api.out/default-outgoing-fn!}}})
 (def datomic-uri (:datomic-uri system))
 (def testing-auth-token "abc123")
-(def testing-clients ["VLACS" "ShowEvidence"])
 (def testing-events [[:flare :ping]
                      [:flare :event-update]])
 (def testing-url "http://some.fake.url.com/api/v1")
@@ -22,20 +28,20 @@
    (schematode/load-schema! (:db-conn system) schema/schema)])
 
 (defn tx-testing-data!
-  [db-conn]
-  (timbre/debug "Starting to transact testing data.")
-  (doseq [et testing-events]
-    (apply (partial flare.event/register! db-conn) et)) 
-  (doseq [c testing-clients]
-    (flare.client/add! db-conn c testing-auth-token)
+  [system]
+  (let [db-conn (get system :db-conn)]
+    (timbre/debug "Starting to transact testing data.")
     (doseq [et testing-events]
-      (flare.subscription/subscribe!
-        db-conn c (apply event/slam-event-type et)
-        testing-url flare.subscription/http-method-post
-        flare.subscription/format-json)))
-  (dotimes [n 5]
-    (flare.api.out/make-ping-event! db-conn))
-  (timbre/debug "Testing data has successfully been transacted.")
+      (apply (partial flare.event/register! db-conn) et)) 
+    (doseq [c (get-in system [:attaches :endpoints])]
+      (doseq [et testing-events]
+        (flare.subscription/subscribe!
+          db-conn c (apply event/slam-event-type et)
+          testing-url flare.subscription/http-method-post
+          flare.subscription/format-json)))
+    (dotimes [n 5]
+      (flare.api.out/make-ping-event! db-conn))
+    (timbre/debug "Testing data has successfully been transacted."))
   :done)
 
 (defn start-datomic! [system]

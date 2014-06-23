@@ -11,8 +11,7 @@
 
 (defn default-outgoing-fn!
   [message]
-  (timbre/debug (str "Outgoing-fn! message:\n"
-                     (util/pprint->str message))))
+  (timbre/debug "Outgoing-fn! message:" message))
 
 (defn tx-entity!->eid
   [db-conn entity-type attrs]
@@ -100,14 +99,18 @@
 
 (defn claim-notifications!
   [db-conn client-eid batch-entity]
-  (when-let [tx-rval
-             (d/transact db-conn [[:flare/grab-notifications
-                                   rules/defaults
-                                   queries/pending-subscription-notifications
-                                   client-eid
-                                   batch-entity]])]
-    (when (> (count (:tempids @tx-rval)) 0)
-      (d/resolve-tempid (d/db db-conn) (:tempids @tx-rval) (:db/id batch-entity)))))
+  (when (first (d/q queries/pending-subscription-notifications
+                    (d/db db-conn)
+                    rules/defaults
+                    client-eid))
+    (when-let [tx-rval
+               (d/transact db-conn [[:flare/grab-notifications
+                                     rules/defaults
+                                     queries/pending-subscription-notifications
+                                     client-eid
+                                     batch-entity]])]
+      (when (> (count (:tempids @tx-rval)) 0)
+        (d/resolve-tempid (d/db db-conn) (:tempids @tx-rval) (:db/id batch-entity))))))
 
 (defn fetch-batched-notifications
   [db-conn batch-eid]
@@ -116,6 +119,13 @@
 
 (defn notification-watcher
   [db-conn outgoing-fn! client-eid single-run? thread-eid]
+  (when (not (fn? outgoing-fn!))
+    (let [ex (ex-info "outgoing-fn! must be a fn!" {:outgoing-fn! outgoing-fn!})]
+      (timbre/fatal ex)
+      (throw ex)))
+  (when (not single-run?)
+    (timbre/info "Flare notification watcher thread started."
+           {:client-eid client-eid :thread-eid thread-eid}))
   (loop [continue? true]
     (if (not continue?)
       true
@@ -126,10 +136,11 @@
                             :thread-batch/uuid (d/squuid)})
             batch-eid (claim-notifications! db-conn client-eid batch-entity)]
         (if (nil? batch-eid)
+          (Thread/sleep 1000)
           (do
-            (Thread/sleep 2000))
-          (do
-            (timbre/debug "Notifications grabbed. Processing them." {:batch-eid batch-eid})
+            (timbre/debug "Notifications grabbed. Processing them."
+                          {:thread-eid thread-eid
+                           :batch-eid batch-eid})
             ;;; Grab them and queue them up.
             (doseq [notification (fetch-batched-notifications db-conn batch-eid)]
               (outgoing-fn! (first notification)))))
@@ -139,7 +150,7 @@
   [db-conn outgoing-fn! client-eid]
   (let [thread-squuid (d/squuid)]
     (when-let [thread-eid (tx-entity!->eid db-conn :thread {:thread/uuid thread-squuid})]
-      (timbre/debug "New thread created." {:uuid thread-squuid
+      (timbre/info "New thread created." {:uuid thread-squuid
                                            :eid thread-eid})
       (Thread. (fn make-notification-watcher-thread- []
                  (notification-watcher db-conn outgoing-fn! client-eid false thread-eid))))))
@@ -154,9 +165,9 @@
             db-conn (event/slam-event-type :flare :ping)
             :v1 nil nil "Ping!" (util/->edn {:message "Ping!"}))))
     (do
-      (timbre/debug "Internal ping event successfully generated.")
+      (timbre/info "Internal ping event successfully generated.")
       true)
     (do
-      (timbre/debug "Internal ping event failed to assert.")
+      (timbre/error "Internal ping event failed to assert.")
       false)))
 

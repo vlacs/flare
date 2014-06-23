@@ -41,7 +41,7 @@
       (upsert!
         db-conn
         (prep-new client-name auth-token)))
-    (timbre/debug "New client has been added." client-name)
+    (timbre/info "New client has been added." client-name)
     :added))
 
 (defn deactivate!
@@ -50,7 +50,7 @@
    (when-let [entity-id (get-entity-id db-conn client-name)]
      (when
        (set-attr! db-conn entity-id :client/inactive? true)
-       (timbre/debug "Client deactivated." client-name)
+       (timbre/info "Client deactivated." client-name)
        :deactivated)))
 
 (defn activate!
@@ -59,7 +59,7 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/inactive? false)
-      (timbre/debug "Client activated." client-name)
+      (timbre/info "Client activated." client-name)
       :activated)))
 
 (defn pause!
@@ -67,7 +67,7 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/paused? true)
-      (timbre/debug "Client paused." client-name)
+      (timbre/info "Client paused." client-name)
       :paused)))
 
 (defn resume!
@@ -75,6 +75,6 @@
   (when-let [entity-id (get-entity-id db-conn client-name)]
     (when
       (set-attr! db-conn entity-id :client/paused? false)
-      (timbre/debug "Client resumed." client-name)
+      (timbre/info "Client resumed." client-name)
       :resumed)))
 

@@ -15,7 +15,7 @@
     :attrs [[:application :keyword]
             [:name :keyword]
             [:current-version :keyword]
-            [:event-shape :string]
+            [:triggering-attrs :ref :many]
             [:description :string]]}
 
    {:namespace :event
