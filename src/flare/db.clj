@@ -3,6 +3,7 @@
     [datomic.api :as d]
     [flare.schema :as schema]
     [datomic-schematode :as schematode]
+    [taoensso.timbre :as timbre]  
     [hatch]))
 
 (defn init-database!
@@ -39,6 +40,7 @@
   "Checks to see if an upsert! succeeded.
   TODO: Ensure the reliability of this fn."
   [db-promise]
+  (timbre/info "Checking promise returned from Datomic..." db-promise)
   (not (nil? @db-promise)))
 
 (defn map-result-keys
