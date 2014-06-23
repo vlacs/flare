@@ -8,7 +8,9 @@
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
                  [com.datomic/datomic-pro "0.9.4766.11"]
-                 [org.vlacs/hatch "0.2.0"]
+                 ^{:voom {:repo "https://github.com/vlacs/hatch"
+                          :branch "development"}}
+                 [org.vlacs/hatch "0.2.0-20140623_151558-gfe0fc67"]
                  [datomic-schematode "0.1.0-RC3"]
                  [org.vlacs/helmsman "0.2.6"]
                  [liberator "0.10.0"]
