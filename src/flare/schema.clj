@@ -15,16 +15,21 @@
     :attrs [[:application :keyword]
             [:name :keyword]
             [:current-version :keyword]
-            [:triggering-attrs :ref :many]
-            [:description :string]]}
+            [:description :string]
+            [:triggering-attrs :ref :many]]}
+
+   ;;; When was the last time we walked the transactions in datomic to see if
+   ;;; there are any event-bearing datoms.
+   {:namespace :sift-singleton
+    :attrs [[:value :instant]]}
 
    {:namespace :event
-    :attrs [[:type :enum [] :indexed]
-            [:version :keyword]
-            [:users-affected :ref :many]
-            [:user-responsible :ref :one]
-            [:message :string]
-            [:payload :string]]}
+    :attrs [[:type :ref :indexed]
+            [:impacted-entities :ref :many]
+            [:tx-responsible :ref]
+            ;;; [:users-affected :ref :many]
+            ;;; [:user-responsible :ref :one]
+            ]}
 
    ;;; Describes clients that can subscribe and their credentials.
    ;;; These should be manually entered.
@@ -35,7 +40,7 @@
             [:inactive? :boolean] ;;; Not making any notifications.
             ;;; consider a [:delay :int] to globally rate-limit updates
             ;;; to any particular client (allow bursting for similar
-            ;;; updates).
+            ;;; updates (maybe?)).
             ]}
 
    ;;; A client who wants to know about something that happens (an event) and
@@ -59,13 +64,14 @@
    {:namespace :subscriber-notification
     :attrs [[:event :ref]
             [:subscription :ref]
-            [:attempt-instants :instant :many]
+            [:attempt-count :long]
             [:last-http-status :bigint]
             [:last-reply-body :string]
             ;; https://groups.google.com/forum/#!topic/datomic/p3FLisquFH8
             ;; use a datomic rule to default to false for
             ;; :done? when it's not set
-            [:status :enum [:enqueued :complete]]
+            [:status :enum [:in-progress :complete]]
+            [:success? :boolean]
             [:thread-batch :ref :indexed]]
     :dbfns [(constraints/unique
               :subscriber-notification

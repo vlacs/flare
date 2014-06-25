@@ -7,16 +7,23 @@
   :license {:name "Eclipse Public License"
             :url "http://www.eclipse.org/legal/epl-v10.html"}
   :dependencies [[org.clojure/clojure "1.6.0"]
-                 [com.datomic/datomic-free "0.9.4766.11"]
                  [org.vlacs/hatch "0.2.0"]
-                 ^{:voom {:repo "https://github.com/vlacs/datomic-schematode" :branch "master"}}
-                 [datomic-schematode "0.1.3-RC1-20140623_200337-g168815f"]
-                 ;;;^{:voom {:repo "https://github.com/vlacs/helmsman"}}
+                 [datomic-schematode "0.1.2-RC1"]
                  [org.vlacs/helmsman "0.2.6"]
                  [liberator "0.10.0"]
                  [org.clojure/data.json "0.2.4"]
                  [http-kit "2.1.16"]
                  [prismatic/schema "0.2.2"]
                  [com.taoensso/timbre "3.2.1"]]
-  :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]]
-                   :source-paths ["dev"]}})
+  
+  :profiles {:dev {:dependencies [[org.clojure/tools.namespace "0.2.4"]
+                                  [com.datomic/datomic-free "0.9.4815.12"]]
+                   :source-paths ["dev"]}
+             :dev-pro {:dependencies [[org.clojure/tools.nrepl "0.2.3"]
+                                      [org.clojure/tools.namespace "0.2.4"]
+                                      [com.datomic/datomic-pro "0.9.4815.12"]]
+                       :source-paths ["dev"] 
+                       :repositories [["my.datomic.com"
+                                       {:url "https://my.datomic.com/repo"
+                                        :username :env/lein_datomic_repo_username
+                                        :password :env/lein_datomic_repo_password}]]}})

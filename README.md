@@ -20,6 +20,15 @@ You can build the necessary dependencies and run the tests with one command.
 
 ```$ sh test.sh```
 
+## STOP! Flare has Datomic constraints!
+Flare requires the Datomic transaction log. This means that Flare does not work
+with in-memory Datomic data stores as they have no transaction log. Datomic with
+a transactor is required to use, test, and develop with Flare. Both Datomic free
+and pro have transactors that can be used, but it is recommended that Datomic
+Pro is used for production enviornments. Flare *should* be edition-independent,
+meaning you should be able to use Flare with both Datomic free and pro without
+an issue.
+
 ## Getting started
 Making events is very easy. There are are just two things you need to know about
 creating events.

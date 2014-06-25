@@ -68,7 +68,6 @@
 
 (def notifications-by-batch
   '{:find [?notification
-           ?payload ?version
            ?url ?auth-token
            ?http-method ?format]
     :in [$ % ?batch-eid]

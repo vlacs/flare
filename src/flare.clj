@@ -7,12 +7,12 @@
             [flare.schema]
             [flare.event]
             [flare.api.out]
+            [flare.sifter]
             [hatch]
             [taoensso.timbre :as timbre]
             ))
 
 (def schema flare.schema/schema)
-(def event flare.event/event)
 
 (defn init!
   "Starts up flare for the first time. By default, we don't load up the schema.
@@ -35,11 +35,14 @@
     (doseq [client (get-in system [:attaches :endpoints])]
       (when (not (flare.client/registered? db-conn client))
         (timbre/debug "Found a new client... Adding it." client)
-        (flare.client/add! (:db-conn system) client (str (d/squuid))))))
+        (flare.client/register! (:db-conn system) client (str (d/squuid))))))
   system)
 
 (defn start!
   [system]
+  (when (nil? (flare.sifter/last-sift-at (:db-conn system)))
+    (flare.sifter/set-last-sift! (:db-conn system)))
+  (flare.sifter/set-last-sift! (:db-conn system))
   (assoc-in system [:flare :notification-threads]
     (into 
       {}
