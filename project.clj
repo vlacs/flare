@@ -11,7 +11,7 @@
                  ^{:voom {:repo "https://github.com/vlacs/hatch"
                           :branch "development"}}
                  [org.vlacs/hatch "0.2.0-20140623_151558-gfe0fc67"]
-                 [datomic-schematode "0.1.0-RC3"]
+                 [datomic-schematode "0.1.2"]
                  [org.vlacs/helmsman "0.2.6"]
                  [liberator "0.10.0"]
                  [org.clojure/data.json "0.2.4"]
