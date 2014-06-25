@@ -2,6 +2,7 @@
 *.jar
 /.lein-*
 /.nrepl-port
+/flare-config.edn
 .repl
 /checkouts
 /classes
