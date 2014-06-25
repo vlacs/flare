@@ -1,7 +1,9 @@
 (ns flare.sifter
-  (:require [datomic.api :as d]))
+  (:require 
+    [flare.db]
+    [datomic.api :as d]))
 
-(def sifting-constant ::immaconstantthatyoullneverseeanywhereelse)
+(def sifting-constant ::master-sifter)
 
 (defn triggering-attr-eids
   [db-conn]
@@ -10,13 +12,22 @@
 
 (defn set-last-sift!
   [db-conn]
-  nil
-  )
+  (let [inst (java.util.Date.)]
+    (when
+      (flare.db/tx-entity! db-conn
+                           :sift-singleton
+                           {:db/ident sifting-constant
+                            :sift-singleton/value inst})
+      inst)))
 
 (defn last-sift-at
   [db-conn]
-  nil
-  )
+  (when-let [ls (d/entity (d/db db-conn) sifting-constant)]
+    (:sift-singleton/value (into {} ls))))
+
+(defn datomic-tx-list
+  [db-conn since-t]
+  (d/log (d/since (d/db db-conn))))
 
 (defn reduced-db
   [db-conn last-sift]

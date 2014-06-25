@@ -20,8 +20,8 @@
 
    ;;; When was the last time we walked the transactions in datomic to see if
    ;;; there are any event-bearing datoms.
-   {:namespace :sifter
-    :attrs [[:last-sift :inst]]}
+   {:namespace :sift-singleton
+    :attrs [[:value :instant]]}
 
    {:namespace :event
     :attrs [[:type :ref :indexed]

@@ -7,16 +7,15 @@
             [flare.event :as event]
             [flare.subscription :as sub]
             [flare.api.out]
-            [taoensso.timbre :as timbre]))
+            [taoensso.timbre :as timbre]
+            [clojure.edn :as edn]))
 
-(def system {:datomic-uri "datomic:mem://flare-test"
-             :config {:flare
-                      {:threads-per-client 1}}
-             :attaches {:endpoints
-                        [:moodle :showevidence]
-                        :outgoing-fns
-                        {:moodle flare.api.out/default-outgoing-fn!
-                         :showevidence flare.api.out/default-outgoing-fn!}}})
+(def system {:attaches
+             {:endpoints
+              [:moodle :showevidence]
+              :outgoing-fns
+              {:moodle flare.api.out/default-outgoing-fn!
+               :showevidence flare.api.out/default-outgoing-fn!}}})
 
 ;;; This is our testing database schema that we'll do event testing on.
 (def test-schema
@@ -35,8 +34,10 @@
                              test-attrs))
 
 (defn init! [system]
-  [(schematode/init-schematode-constraints! (:db-conn system))
-   (schematode/load-schema! (:db-conn system) schema/schema)])
+  (timbre/info "Loading schematode constraints and flare schema...")
+  (schematode/init-schematode-constraints! (:db-conn system))
+  (schematode/load-schema! (:db-conn system) schema/schema)
+  system)
 
 (defn tx-test-schema!
   [db-conn]
@@ -78,7 +79,7 @@
   (timbre/info "Starting Datomic peer...")
   (d/create-database (:datomic-uri system))
   (assoc system :db-conn
-         (d/connect (:datomic-uri system))))
+         (d/connect (get-in system [:datomic-uri]))))
 
 (defn stop-datomic! [system]
   (timbre/info "Stopping Datomic peer...")
@@ -90,7 +91,10 @@
   "Starts the current development system."
   []
   (timbre/info "Bringing the test system up...")
-  (alter-var-root #'system start-datomic!)
+  (timbre/info "Reading flare-config.edn...")
+  (let [conf (edn/read-string (slurp "flare-config.edn"))]
+    (alter-var-root #'system merge conf)
+    (alter-var-root #'system start-datomic!))
   (init! system))
 
 (defn stop!

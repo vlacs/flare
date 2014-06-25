@@ -10,13 +10,15 @@
   "An independent fn that initializes the state of flare before anything is
   started. This should only be called from flare/init!"
   [new-database]
-  [(schematode/init-schematode-constraints! new-database)
-   (schematode/load-schema! new-database schema/schema)])
+  (schematode/init-schematode-constraints! new-database)
+  (schematode/load-schema! new-database schema/schema)
+  new-database)
 
 (def partitions (hatch/schematode->partitions schema/schema))
 (def valid-attrs (merge-with
-                  (fn [x y] (vec (concat x y)))
-                   {:event.type [:db/ident]}
+                   (fn [x y] (vec (concat x y)))
+                   {:event.type [:db/ident]
+                    :sift-singleton [:db/ident]}
                    (hatch/schematode->attrs schema/schema)))
 (def clean-entity (partial hatch/clean-entity partitions valid-attrs))
 (def tx-entity! (partial hatch/tx-clean-entity! partitions valid-attrs))

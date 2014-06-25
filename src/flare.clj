@@ -7,6 +7,7 @@
             [flare.schema]
             [flare.event]
             [flare.api.out]
+            [flare.sifter]
             [hatch]
             [taoensso.timbre :as timbre]
             ))
@@ -39,6 +40,9 @@
 
 (defn start!
   [system]
+  (when (nil? (flare.sifter/last-sift-at (:db-conn system)))
+    (flare.sifter/set-last-sift! (:db-conn system)))
+  (flare.sifter/set-last-sift! (:db-conn system))
   (assoc-in system [:flare :notification-threads]
     (into 
       {}
