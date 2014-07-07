@@ -67,4 +67,19 @@
   "Example: (ptouch-that '[:find ?e :where [?e :user/username]])"
   [query & data-sources]
   (pprint (apply touch-that query data-sources)))
+ 
+(comment
+
+  (do
+    @(ft-config/tx-test-entity!
+       db :test-entity-one
+       {:test-entity-one/some-string "abc123"
+        :test-entity-one/some-int 12345
+        :test-entity-one/some-ref :db/txInstant}))
+
+  (java.util.Date.)
+
+  (flare.sifter/datomic-tx-list-since
+    db (flare.sifter/last-sift-at db)
+    (flare.sifter/triggering-attr-eids db)))
 

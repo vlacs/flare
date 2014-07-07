@@ -21,7 +21,7 @@
 (def test-schema
   [{:namespace :test-entity-one
     :attrs [[:some-string :string]
-            [:some-int :bigint]
+            [:some-int :long]
             [:some-ref :ref]]}
    {:namespace :test-entity-two
     :attrs [[:another-string :string
