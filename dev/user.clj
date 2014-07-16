@@ -35,10 +35,8 @@
     (constantly
       (-> (flare/init! true ft-config/system)
           flare/configure!
-          flare/start!)))
-  
-  ;;; Transact some data to work with.
-  (ft-config/tx-testing! (:db-conn ft-config/system)))
+          flare/start!
+          ft-config/tx-testing!))))
 
 (defn reset
   "Stops the system, reloads modified source files, and restarts it."
@@ -68,18 +66,3 @@
   [query & data-sources]
   (pprint (apply touch-that query data-sources)))
  
-(comment
-
-  (do
-    @(ft-config/tx-test-entity!
-       db :test-entity-one
-       {:test-entity-one/some-string "abc123"
-        :test-entity-one/some-int 12345
-        :test-entity-one/some-ref :db/txInstant}))
-
-  (java.util.Date.)
-
-  (flare.sifter/datomic-tx-list-since
-    db (flare.sifter/last-sift-at db)
-    (flare.sifter/triggering-attr-eids db)))
-

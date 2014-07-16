@@ -8,10 +8,6 @@
             [flare.event :as event]
             [taoensso.timbre :as timbre]))
 
-(def http-method-post :subscription.http-method/post)
-(def http-method-put :subscription.http-method/put)
-(def format-edn :subscription.format/edn)
-(def format-json :subscription.format/json)
 
 (def upsert! (flare.db/new-upserter-fn :subscription))
 (def set-attr! (flare.db/new-set-attr-fn upsert!))
@@ -19,16 +15,12 @@
 (defn prep-new
   [client-eid
    event-type
-   url-string
-   http-method-keyword
-   format-keyword]
+   url-string]
   (hatch/slam-all
     {:client client-eid
      :event.type event-type
      :url url-string
-     :http-method http-method-keyword
-     :format format-keyword}
-    :subscription))
+     } :subscription))
 
 (defn get-entity-id
   [db-conn client-name event-type]
@@ -40,31 +32,38 @@
          event-type)))
 
 (defn subscribe!
-  [db-conn
+  "This function changes the system to reflect the transformation fn's relation
+  to the client and the event-type. This fn returns the updated system.
+  
+  The api-transformation-fn that takes two arguments, the first is the prepared
+  http-kit options map for the call to be made. The second is the data that is
+  to be sent to the third party via the http options. A 2 item vector with the
+  transformed options followed by the transformed data."
+  [system
    client-name
    event-type
    url-string
-   http-method-keyword
-   format-keyword]
+   api-transformation-fn]
   ;;; We can only subscribe to events and clients that are already registered.
-  (if-let [client-eid (client/get-entity-id db-conn client-name)]
-    (let [new-sub-entity (prep-new client-eid
-                                   event-type
-                                   url-string
-                                   http-method-keyword
-                                   format-keyword)]
-      (if
-        (upserted?
-          (upsert!
-            db-conn
-            new-sub-entity))
-        (do
-          (timbre/info "Subscription added." client-name event-type)
-          :subscribed)
-        (timbre/error "Failed to add the subscription to Datomic."
-                      new-sub-entity)))
-    (timbre/error "Aborting subscription creation. No such client." client-name)
-    ))
+  (let [db-conn (:db-conn system)]
+    (if-let [client-eid (client/get-entity-id db-conn client-name)]
+      (let [new-sub-entity (prep-new client-eid
+                                     event-type
+                                     url-string)]
+        (if
+          (upserted?
+            (upsert!
+              db-conn
+              new-sub-entity))
+          (do
+            (timbre/info "Subscription added." client-name event-type)
+            (assoc-in system [:flare :transformations
+                              client-name event-type]
+                      api-transformation-fn))
+          (timbre/error "Failed to add the subscription to Datomic."
+                        new-sub-entity)))
+      (timbre/error "Aborting subscription creation. No such client." client-name)
+      )))
 
 (defn alter-sub-attr!
   [db-conn client-name event-type attr value]
@@ -91,4 +90,5 @@
 (defn resume!
   [db-conn client-name event-type]
   (alter-sub-attr! db-conn client-name event-type :subscription/paused? false))
+
 

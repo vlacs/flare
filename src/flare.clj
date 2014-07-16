@@ -7,7 +7,6 @@
             [flare.schema]
             [flare.event]
             [flare.api.out]
-            [flare.sifter]
             [hatch]
             [taoensso.timbre :as timbre]
             ))
@@ -36,39 +35,16 @@
       (when (not (flare.client/registered? db-conn client))
         (timbre/debug "Found a new client... Adding it." client)
         (flare.client/register! (:db-conn system) client (str (d/squuid))))))
-  system)
+  (assoc-in system [:flare :transformations]
+            (into {}
+                  (map (fn [i] [i {}]) (get-in system [:attaches :endpoints])))))
 
 (defn start!
   [system]
-  (when (nil? (flare.sifter/last-sift-at (:db-conn system)))
-    (flare.sifter/set-last-sift! (:db-conn system)))
-  (assoc-in system [:flare :notification-threads]
-    (into 
-      {}
-      (let [threads (get-in system [:config :flare :threads-per-client] 1)]
-        (for [client (get-in system [:attaches :endpoints])]
-          (let [client-eid (flare.client/get-entity-id (:db-conn system) client)]
-            [client-eid
-             (doall (for [t (repeatedly
-                              threads
-                              (partial
-                                flare.api.out/make-notification-watcher-thread
-                                (:db-conn system)
-                                (get-in system [:attaches :outgoing-fns client])
-                                client-eid))]
-                      (do
-                        (.start t)
-                        t)))]))))))
+  system)
 
 (defn stop!
   "Wraps up everything flare is working on so we can cleanly shutdown."
   [system]
-  (doseq [t (get-in system [:flare :notification-threads])]
-    (timbre/debug "Client watcher threads for: " (first t))
-    (doseq [thr (second t)]
-      (timbre/debug "Stopping thread.")
-      (.stop thr)
-      (timbre/debug "Thread stopped."))
-    (timbre/debug "Client watchers stopped for: " (first t)))
   system)
 

@@ -49,13 +49,10 @@
     :attrs [[:client :ref :indexed]
             [:event.type :ref :indexed]
             [:url :string]
-            [:http-method :enum [:put :post]]
-            [:format :enum [:json :edn]]
+            ;;; [:http-method :enum [:put :post]]
+            ;;; [:format :enum [:json :edn]]
             [:paused? :boolean] ;;; Not processing these notifications.
             [:inactive? :boolean] ;;; Not making these notifications.
-            ;;; See possible client.delay attr. We might want an
-            ;;; overriding one here also a burst size if the sub
-            ;;; supports multiple updates per api call.
             ] 
     :dbfns [(constraints/unique :subscription :client :event.type)]}
 

@@ -12,10 +12,7 @@
 
 (def system {:attaches
              {:endpoints
-              [:moodle :showevidence]
-              :outgoing-fns
-              {:moodle flare.api.out/default-outgoing-fn!
-               :showevidence flare.api.out/default-outgoing-fn!}}})
+              [:moodle :showevidence]}})
 
 ;;; This is our testing database schema that we'll do event testing on.
 (def test-schema
@@ -40,39 +37,60 @@
   system)
 
 (defn tx-test-schema!
-  [db-conn]
+  [system]
   (timbre/info "Loading test schema...")
-  (schematode/load-schema! db-conn test-schema)
-  db-conn)
+  (let [db-conn (:db-conn system)]
+    (schematode/load-schema! db-conn test-schema))
+  system)
 
 (defn tx-test-events!
-  [db-conn]
+  [system]
   (timbre/info "Loading test events...")
-  (doseq [evt [[:flare :test-event-one
-                [:test-entity-one/some-string]]
-               [:flare :test-event-two
-                [:test-entity-one/some-int
-                 :test-entity-one/some-ref]]]]
-    (apply (partial flare.event/register! db-conn) evt))
-  db-conn)
+  (let [db-conn (:db-conn system)]
+    (doseq [evt [[:flare :test-event-one
+                  [:test-entity-one/some-string]]
+                 [:flare :test-event-two
+                  [:test-entity-one/some-int
+                   :test-entity-one/some-ref]]]]
+      (apply (partial flare.event/register! db-conn) evt)))
+  system)
 
 (defn tx-test-event-attrs!
-  [db-conn]
+  [system]
   (timbre/info "Loading test data...")
-  (tx-test-entity! db-conn :test-entity-one
-                   (hatch/slam-all
-                     {:some-string "abc123"
-                      :some-int 1
-                      :some-ref :test-entity-one/some-int}
-                     :test-entity-one))
-  db-conn)
+  (let [db-conn (:db-conn system)]
+    (tx-test-entity! db-conn :test-entity-one
+                     (hatch/slam-all
+                       {:some-string "abc123"
+                        :some-int 1
+                        :some-ref :test-entity-one/some-int}
+                       :test-entity-one)))
+  system)
+
+(defn test-transformation
+  [request-opts data]
+  [request-opts data])
+
+(defn tx-test-subscriptions!
+  [system]
+  (timbre/info "Making test subscriptions...")
+  (-> system
+      (flare.subscription/subscribe!
+        :moodle (flare.event/slam-event-type :flare :test-event-one)
+        "http://fakeuri.com/api/v1/foo"
+        test-transformation)
+      (flare.subscription/subscribe!
+        :showevidence (flare.event/slam-event-type :flare :test-event-one)
+        "http://anotherfake.uri/a/v1/pi/bar"
+        test-transformation)))
 
 (defn tx-testing!
-  [db-conn]
+  [system]
   (timbre/info "Assembling test database...")
-  (-> db-conn
+  (-> system
       tx-test-schema!
       tx-test-events!
+      tx-test-subscriptions!
       tx-test-event-attrs!))
 
 (defn start-datomic! [system]
