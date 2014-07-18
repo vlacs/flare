@@ -32,28 +32,26 @@
          event-type)))
 
 (defn get-subscription
-  [system client-name event-type]
-  (let [db-conn (:db-conn system)]
-    (when-let [eid (get-entity-id db-conn 
-                                  client-name
-                                  event-type)]
-      (when-let [e (d/entity (d/db db-conn) eid)]
-        (into {} e)))))
+  [db-conn client-name event-type]
+  (when-let [eid (get-entity-id db-conn 
+                                client-name
+                                event-type)]
+    (when-let [e (d/entity (d/db db-conn) eid)]
+      (into {} e))))
+
+(defn subscribed?
+  [db-conn client-name event-type]
+  (not (nil? (get-entity-id db-conn client-name event-type))))
 
 (defn subscribe!
-  "This function changes the system to reflect the transformation fn's relation
-  to the client and the event-type. This fn returns the updated system.
-
-  The api-transformation-fn that takes two arguments, the first is the prepared
-  http-kit options map for the call to be made. The second is the data that is
-  to be sent to the third party via the http options. A 2 item vector with the
-  transformed options followed by the transformed data."
-  [system
+  "Subscribes to a particular kind of event for a particular client."
+  [db-conn
    client-name
    event-type
    url-string]
   ;;; We can only subscribe to events and clients that are already registered.
-  (let [db-conn (:db-conn system)]
+  (if (subscribed? client-name event-type)
+    :exists
     (if-let [client-eid (client/get-entity-id db-conn client-name)]
       (let [new-sub-entity (prep-new client-eid
                                      event-type
@@ -65,7 +63,7 @@
               new-sub-entity))
           (do
             (timbre/info "Subscription added." client-name event-type)
-            true)
+            :added)
           (timbre/error "Failed to add the subscription to Datomic."
                         new-sub-entity)))
       (timbre/error "Aborting subscription creation. No such client." client-name)

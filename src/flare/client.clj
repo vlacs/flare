@@ -16,12 +16,11 @@
          client-name)))
 
 (defn get-client
-  [system client-name]
-  (let [db-conn (:db-conn system)]
-    (when-let [e (d/entity
-                   (d/db db-conn)
-                   (get-entity-id db-conn client-name))]
-      (into {} e))))
+  [db-conn client-name]
+  (when-let [e (d/entity
+                 (d/db db-conn)
+                 (get-entity-id db-conn client-name))]
+    (into {} e)))
 
 (defn prep-new
   ([client-name auth-token]
@@ -44,22 +43,24 @@
 
 (defn register!
   [db-conn client-name auth-token]
-  (when
-    (upserted?
-      (upsert!
-        db-conn
-        (prep-new client-name auth-token)))
-    (timbre/info "New client has been added." client-name)
-    :added))
+  (if (registered? db-conn client-name)
+    :exists
+    (when
+      (upserted?
+        (upsert!
+          db-conn
+          (prep-new client-name auth-token)))
+      (timbre/info "New client has been added." client-name)
+      :added)))
 
 (defn deactivate!
   "Stops flare from making notifications for a particular client."
   [db-conn client-name]
-   (when-let [entity-id (get-entity-id db-conn client-name)]
-     (when
-       (set-attr! db-conn entity-id :client/inactive? true)
-       (timbre/info "Client deactivated." client-name)
-       :deactivated)))
+  (when-let [entity-id (get-entity-id db-conn client-name)]
+    (when
+      (set-attr! db-conn entity-id :client/inactive? true)
+      (timbre/info "Client deactivated." client-name)
+      :deactivated)))
 
 (defn activate!
   "Allows flare to start making notifications for a particular client."
