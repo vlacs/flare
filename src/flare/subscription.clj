@@ -51,8 +51,7 @@
   [system
    client-name
    event-type
-   url-string
-   api-transformation-fn]
+   url-string]
   ;;; We can only subscribe to events and clients that are already registered.
   (let [db-conn (:db-conn system)]
     (if-let [client-eid (client/get-entity-id db-conn client-name)]
@@ -66,9 +65,7 @@
               new-sub-entity))
           (do
             (timbre/info "Subscription added." client-name event-type)
-            (assoc-in system [:flare :transformations
-                              client-name event-type]
-                      api-transformation-fn))
+            true)
           (timbre/error "Failed to add the subscription to Datomic."
                         new-sub-entity)))
       (timbre/error "Aborting subscription creation. No such client." client-name)
