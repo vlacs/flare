@@ -50,7 +50,7 @@
    event-type
    url-string]
   ;;; We can only subscribe to events and clients that are already registered.
-  (if (subscribed? client-name event-type)
+  (if (subscribed? db-conn client-name event-type)
     :exists
     (if-let [client-eid (client/get-entity-id db-conn client-name)]
       (let [new-sub-entity (prep-new client-eid
