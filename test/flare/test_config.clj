@@ -10,9 +10,7 @@
             [taoensso.timbre :as timbre]
             [clojure.edn :as edn]))
 
-(def system {:attaches
-             {:endpoints
-              [:moodle :showevidence]}})
+(def system nil)
 
 ;;; This is our testing database schema that we'll do event testing on.
 (def test-schema

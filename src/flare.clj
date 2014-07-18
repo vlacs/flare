@@ -24,21 +24,6 @@
      (flare.db/init-database! (:db-conn system)))
    system))
 
-(defn configure!
-  "Brings flare up so we'll be ready for business."
-  [system]
-  ;;; Create the clients that are inside the system.
-  (timbre/debug "Configuring Flare...")
-  (timbre/debug "Endpoints?" (get-in system [:attaches :endpoints]))
-  (let [db-conn (:db-conn system)]
-    (doseq [client (get-in system [:attaches :endpoints])]
-      (when (not (flare.client/registered? db-conn client))
-        (timbre/debug "Found a new client... Adding it." client)
-        (flare.client/register! (:db-conn system) client (str (d/squuid))))))
-  (assoc-in system [:flare :transformations]
-            (into {}
-                  (map (fn [i] [i {}]) (get-in system [:attaches :endpoints])))))
-
 (defn start!
   [system]
   system)
