@@ -33,11 +33,12 @@
 
 (defn get-subscription
   [system client-name event-type]
-  (when-let [eid (get-entity-id (:db-conn system)
-                                client-name
-                                event-type)]
-    (when-let [e (d/entity (:db-conn system) eid)]
-      (into {} e))))
+  (let [db-conn (:db-conn system)]
+    (when-let [eid (get-entity-id db-conn 
+                                  client-name
+                                  event-type)]
+      (when-let [e (d/entity (d/db db-conn) eid)]
+        (into {} e)))))
 
 (defn subscribe!
   "This function changes the system to reflect the transformation fn's relation

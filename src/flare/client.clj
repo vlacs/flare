@@ -15,6 +15,14 @@
          (d/db db-conn)
          client-name)))
 
+(defn get-client
+  [system client-name]
+  (let [db-conn (:db-conn system)]
+    (when-let [e (d/entity
+                   (d/db db-conn)
+                   (get-entity-id db-conn client-name))]
+      (into {} e))))
+
 (defn prep-new
   ([client-name auth-token]
    (prep-new client-name auth-token nil nil))
