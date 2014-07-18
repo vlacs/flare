@@ -31,10 +31,18 @@
          client-name
          event-type)))
 
+(defn get-subscription
+  [system client-name event-type]
+  (when-let [eid (get-entity-id (:db-conn system)
+                                client-name
+                                event-type)]
+    (when-let [e (d/entity (:db-conn system) eid)]
+      (into {} e))))
+
 (defn subscribe!
   "This function changes the system to reflect the transformation fn's relation
   to the client and the event-type. This fn returns the updated system.
-  
+
   The api-transformation-fn that takes two arguments, the first is the prepared
   http-kit options map for the call to be made. The second is the data that is
   to be sent to the third party via the http options. A 2 item vector with the
