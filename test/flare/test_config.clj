@@ -1,6 +1,7 @@
 (ns flare.test-config
   (:require [datomic.api :as d]
             [datomic-schematode :as schematode]
+            [stateful]
             [hatch]
             [flare.schema :as schema]
             [flare.client]
@@ -9,8 +10,6 @@
             [flare.api.out]
             [taoensso.timbre :as timbre]
             [clojure.edn :as edn]))
-
-(def system nil)
 
 ;;; This is our testing database schema that we'll do event testing on.
 (def test-schema
@@ -65,63 +64,54 @@
                        :test-entity-one)))
   system)
 
-(defn test-transformation
-  [request-opts data]
-  [request-opts data])
-
 (defn tx-test-subscriptions!
-  [system]
+  [system-atom]
   (timbre/info "Making test subscriptions...")
-  (-> system
-      (flare.subscription/subscribe!
-        :moodle (flare.event/slam-event-type :flare :test-event-one)
-        "http://fakeuri.com/api/v1/foo"
-        test-transformation)
-      (flare.subscription/subscribe!
-        :showevidence (flare.event/slam-event-type :flare :test-event-one)
-        "http://anotherfake.uri/a/v1/pi/bar"
-        test-transformation)))
+  (let [dc (stateful/get-from system-atom [:db-conn])]
+    (flare.subscription/subscribe!
+      system-atom :moodle (flare.event/slam-event-type :flare :test-event-one)
+      "http://fakeuri.com/api/v1/foo")
+    (flare.subscription/subscribe!
+      system-atom :showevidence (flare.event/slam-event-type :flare :test-event-one)
+      "http://anotherfake.uri/a/v1/pi/bar"))
+  system)
 
 (defn tx-testing!
-  [system]
+  [system-atom]
   (timbre/info "Assembling test database...")
-  (-> system
-      tx-test-schema!
-      tx-test-events!
-      tx-test-subscriptions!
-      tx-test-event-attrs!))
+  (stateful/transition! system-atom tx-test-schema!)
+  (stateful/transition! system-atom tx-test-events!)
+  (tx-test-subscriptions! system-atom)
+  (stateful/transition! system-atom tx-test-event-attrs!))
 
 (defn start-datomic! [system]
   (timbre/info "Starting Datomic peer...")
-  (d/create-database (:datomic-uri system))
-  (assoc system :db-conn
-         (d/connect (get-in system [:datomic-uri]))))
+  (let [d-uri (get-in system [:config :datomic-uri])]
+    (d/create-database d-uri)
+    (assoc system :db-conn (d/connect d-uri))))
 
 (defn stop-datomic! [system]
   (timbre/info "Stopping Datomic peer...")
-  (dissoc system :db-conn)
-  (d/delete-database (:datomic-uri system))
-  system)
+  (d/delete-database (get-in system [:config :datomic-uri]))
+  (dissoc system :db-conn))
 
 (defn start!
   "Starts the current development system."
-  []
+  [system-atom]
   (timbre/info "Bringing the test system up...")
-  (timbre/info "Reading flare-config.edn...")
-  (let [conf (edn/read-string (slurp "flare-config.edn"))]
-    (alter-var-root #'system merge conf)
-    (alter-var-root #'system start-datomic!))
-  (init! system))
+  (stateful/load-config! system-atom [:config] "flare-config.edn")
+  (stateful/transition! system-atom start-datomic!)
+  (stateful/transition! system-atom init!))
 
 (defn stop!
   "Shuts down and destroys the current development system."
-  []
+  [system-atom]
   (timbre/info "Shutting down the test system...")
-  (alter-var-root #'system
-                  (fn [s] (when s (stop-datomic! s)))))
+  (when (not (nil? (stateful/get-from system-atom [:db-conn])))
+    (stateful/transition! system-atom stop-datomic!)))
 
-(defn testing-fixture [f]
-  (start!)
+(defn testing-fixture [system-atom f]
+  (start! system-atom)
   (f)
-  (stop!))
+  (stop! system-atom))
 

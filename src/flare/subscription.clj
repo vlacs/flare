@@ -45,29 +45,50 @@
 
 (defn subscribe!
   "Subscribes to a particular kind of event for a particular client."
-  [db-conn
-   client-name
-   event-type
-   url-string]
-  ;;; We can only subscribe to events and clients that are already registered.
-  (if (subscribed? db-conn client-name event-type)
-    :exists
-    (if-let [client-eid (client/get-entity-id db-conn client-name)]
-      (let [new-sub-entity (prep-new client-eid
-                                     event-type
-                                     url-string)]
-        (if
-          (upserted?
-            (upsert!
-              db-conn
-              new-sub-entity))
-          (do
-            (timbre/info "Subscription added." client-name event-type)
-            :added)
-          (timbre/error "Failed to add the subscription to Datomic."
-                        new-sub-entity)))
-      (timbre/error "Aborting subscription creation. No such client." client-name)
-      )))
+  ([client-name event-type url-string]
+   (subscribe!
+     (stateful/get-system-object)
+     client-name
+     event-type
+     url-string
+     nil))
+  ([client-name event-type url-string transformation-fn]
+   (subscribe! 
+     mutable-system
+     client-name
+     event-type
+     url-string
+     nil))
+  ([mutable-system
+    client-name
+    event-type
+    url-string
+    transformation-fn]
+   (let [db-conn (stateful/get-from mutable-system [:db-conn])]
+     ;;; We can only subscribe to events and clients that are already registered.
+     (if (subscribed? db-conn client-name event-type)
+       :exists
+       (if-let [client-eid (client/get-entity-id db-conn client-name)]
+         (let [new-sub-entity (prep-new client-eid
+                                        event-type
+                                        url-string)]
+           (if
+             (upserted?
+               (upsert!
+                 db-conn
+                 new-sub-entity))
+             (do
+               (when (fn? transformation-fn)
+                 (stateful/put-in!
+                   mutable-system
+                   [:flare :transformations client-name event-type]
+                   transformation-fn))
+               (timbre/info "Subscription added." client-name event-type)
+               :added)
+             (timbre/error "Failed to add the subscription to Datomic."
+                           new-sub-entity)))
+         (timbre/error "Aborting subscription creation. No such client." client-name)
+         )))))
 
 (defn alter-sub-attr!
   [db-conn client-name event-type attr value]
