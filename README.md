@@ -1,3 +1,9 @@
+# This project is dead, unfortunately. #
+
+### We're keeping it here as a monument and potential source of inspiration. ###
+
+--
+
 # Flare
 #### An event-based notification system for Datomic.
 
